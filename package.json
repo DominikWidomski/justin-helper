@@ -1,0 +1,19 @@
+{
+  "name": "ll",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "atob": "^2.0.3",
+    "base64url": "^2.0.0",
+    "btoa": "^1.1.2",
+    "cli-table2": "^0.2.0",
+    "dotenv": "^4.0.0",
+    "ember-simple-auth": "^1.4.0",
+    "ember-simple-auth-token": "^2.1.0",
+    "inquirer": "^4.0.1",
+    "isomorphic-fetch": "^2.2.1",
+    "jsonwebtoken": "^8.1.0",
+    "jwt-node": "^0.1.9"
+  }
+}
