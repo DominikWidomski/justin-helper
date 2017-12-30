@@ -1,6 +1,7 @@
 require('dotenv').config()
 
 const inquirer = require('inquirer');
+const chalk = require('chalk');
 const Table = require('cli-table2');
 const DateUtil = require("./src/utils/date");
 require('isomorphic-fetch');
@@ -113,6 +114,7 @@ function getTokenData(e) {
 };
 
 async function main() {
+	// @TODO: Indicate progress of "Authenticating..."
 	const tokenResponse = await getToken();
 	token = tokenResponse.token;
 
@@ -187,11 +189,12 @@ async function main() {
 		return projectTime.attributes.duration_mins > 0;
 	})[0];
 
+	// ask if you'd like to repeat it
 	const queryNextAction = async (lastInput) => {
 		const { date, duration_mins, project_id } = lastInput.attributes;
 		const projectName = projects.data.find(project => project.id === project_id).attributes.name;
 		const query = await inquirer.prompt([{
-			message: `Most recent: ${[ DateUtil.getNameOfDay(date), date, projectName, duration_mins / 60 + 'h' ].join()}. Repeat?`,
+			message: `Most recent: ${[ DateUtil.getNameOfDay(date), date, projectName, duration_mins / 60 + 'h' ].join(', ')}. Repeat?`,
 			type: "expand",
 			name: "nextAction",
 			choices: [
@@ -204,42 +207,62 @@ async function main() {
 		return query.nextAction;
 	}
 
+	// POST for new Project time
 	if (await queryNextAction(lastInput) === 'repeat') {
 		const lastDate = lastInput.attributes.date;
 		let nextDate = DateUtil.addDaysToDate(lastDate, 1);
 
 		while (DateUtil.getDateObject(nextDate).isWeekend) {
-			console.log("Before:", DateUtil.getDateObject(nextDate).dateTime);
 			nextDate = DateUtil.addDaysToDate(nextDate, 1);
-			console.log("After:", DateUtil.getDateObject(nextDate).dateTime);
 		}
 
-		const data = {
-			"data": {
-				"attributes": {
-					"project_id": lastInput.attributes.project_id,
-					"user_id": userData.data.id,
-					"date": DateUtil.getDateTime(nextDate),
-					"duration_mins": lastInput.attributes.duration_mins,
-					"approved_at": null,
-					"created_at": null,
-					"updated_at": null,
-					"is_rejected": false
-				},
-				"type": "project-times"
+		// not in the future
+		if (DateUtil.getDateTime(nextDate) <= DateUtil.getDateTime(new Date())) {
+			let projectName = projects.data.find(project => project.id === lastInput.attributes.project_id).attributes.name;
+			nextDate = DateUtil.getDateTime(nextDate);
+
+			const answer = await inquirer.prompt([{
+				message: `About to submit ${lastInput.attributes.duration_mins / 60}h to "${projectName}" on ${DateUtil.getNameOfDay(nextDate)} ${nextDate}`,
+				type: "confirm",
+				name: "confirm",
+				default: false
+			}]);
+
+			if (answer.confirm) {
+				const data = {
+					"data": {
+						"attributes": {
+							"project_id": lastInput.attributes.project_id,
+							"user_id": userData.data.id,
+							"date": nextDate,
+							"duration_mins": lastInput.attributes.duration_mins,
+						},
+						"type": "project-times"
+					}
+				};
+
+				// @TODO: this should maybe handle if the next day is a record already, to PATCH too...
+				// Not sure but the server check could just be if there is a record for a project-to-user-to-date
+				// so could check the same on client, provided we have sufficient info,
+				// maybe we get more dates ahead of time?
+				let res;
+				try {
+					res = await post("/project-times", data);
+				} catch(e) {
+					console.log(e);
+				}
+
+				const {
+					duration_mins, project_id, date
+				} = res.data.attributes;
+				projectName = projects.data.find(project => project.id === project_id).attributes.name;
+				console.log(`Submitted ${duration_mins / 60} to ${projectName} on ${DateUtil.getNameOfDay(date)} ${date}`);
 			}
-		};
-		let res;
-		try {
-			res = await post("/project-times", data);
-		} catch(e) {
-			
+		} else {
+			// could probably do that before I even ask if you wanna do anything
+			console.log(chalk.cyan("No more recent dates before today found to enter 👌"));
 		}
-		console.log(res);
 	}
-
-	// ask if you'd like to repeat it
-	// POST for new Project time
 
 	// POST: Create project time, time in minutes 420min -> 7h
 	// curl 'https://api.dev.justinapp.io/v1/project-times' -H 'pragma: no-cache' -H 'origin: https://dev.justinapp.io' -H 'accept-encoding: gzip, deflate, br' -H 'accept-language: en-GB,en;q=0.9,en-US;q=0.8,pl;q=0.7,de;q=0.6' -H 'authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyOWU1YmY2MC1mMWM5LTQwMmItYTM2Ni01MmFmYWNjNjc2NWEiLCJpc3MiOiJodHRwczovL2FwaS5kZXYuanVzdGluYXBwLmlvL3YxL2F1dGgiLCJpYXQiOjE1MTM2ODExNzMsImV4cCI6MTUxNDg5MDc3MywibmJmIjoxNTEzNjgxMTczLCJqdGkiOiJJY2tmM09XU0ZIVTA1UUpxIiwidXNlcl9pZCI6IjI5ZTViZjYwLWYxYzktNDAyYi1hMzY2LTUyYWZhY2M2NzY1YSJ9.laOXBJjy-f-5Cc5h0u9KDHuvu77BWdwdhy5LdRdA18M' -H 'content-type: application/vnd.api+json' -H 'accept: application/vnd.api+json' -H 'cache-control: no-cache' -H 'authority: api.dev.justinapp.io' -H 'user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36' -H 'referer: https://dev.justinapp.io/times/2017-12-18' --data-binary '{"data":{"attributes":{"project_id":"baa95e34-4008-4915-99ea-e5cde907b65c","user_id":"29e5bf60-f1c9-402b-a366-52afacc6765a","date":"2017-12-20","duration_mins":420,"approved_at":null,"created_at":null,"updated_at":null,"is_rejected":false},"type":"project-times"}}' --compressed
@@ -273,6 +296,9 @@ async function main() {
 	const res = await post("/project-times/649055cb-aa8d-4c26-9762-898c498182b1", data, "PATCH");
 	// console.log(res);
 	//*/
+
+	// DELETE project-times
+	// curl 'https://api.dev.justinapp.io/v1/project-times/108ba53d-afdb-4aa4-9e8b-a331ac9fa48a' -X DELETE -H 'pragma: no-cache' -H 'origin: https://dev.justinapp.io' -H 'accept-encoding: gzip, deflate, br' -H 'accept-language: en-GB,en;q=0.9,en-US;q=0.8,pl;q=0.7,de;q=0.6' -H 'authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyOWU1YmY2MC1mMWM5LTQwMmItYTM2Ni01MmFmYWNjNjc2NWEiLCJpc3MiOiJodHRwczovL2FwaS5kZXYuanVzdGluYXBwLmlvL3YxL2F1dGgiLCJpYXQiOjE1MTM2ODExNzMsImV4cCI6MTUxNDg5MDc3MywibmJmIjoxNTEzNjgxMTczLCJqdGkiOiJJY2tmM09XU0ZIVTA1UUpxIiwidXNlcl9pZCI6IjI5ZTViZjYwLWYxYzktNDAyYi1hMzY2LTUyYWZhY2M2NzY1YSJ9.laOXBJjy-f-5Cc5h0u9KDHuvu77BWdwdhy5LdRdA18M' -H 'accept: application/vnd.api+json' -H 'cache-control: no-cache' -H 'authority: api.dev.justinapp.io' -H 'user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36' -H 'referer: https://dev.justinapp.io/times/2017-12-25' --compressed
 }
 
 main();
