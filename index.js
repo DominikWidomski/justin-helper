@@ -127,19 +127,17 @@ async function main() {
 	
 	const projects = await getProjects();
 
-	// console.log(projects.data.map(project => project.attributes.name));
+	// const selectedProject = await inquirer.prompt([{
+	// 	message: "Select a project",
+	// 	type: "list",
+	// 	name: "selectedProject",
+	// 	choices: projects.data.map(project => ({
+	// 		name: project.attributes.name,
+	// 		value: project.id
+	// 	}))
+	// }]);
 
-	const selectedProject = await inquirer.prompt([{
-		message: "Select a project",
-		type: "list",
-		name: "selectedProject",
-		choices: projects.data.map(project => ({
-			name: project.attributes.name,
-			value: project.id
-		}))
-	}]);
-
-	console.log("Selected Project:", selectedProject);
+	// console.log("Selected Project:", selectedProject);
 
 	// GET project-times to check 
 	// https://api.dev.justinapp.io/v1/project-times?filter%5Buser_id%5D=29e5bf60-f1c9-402b-a366-52afacc6765a&filter%5Bdate%3Astart%5D=2017-12-25&filter%5Bdate%3Aend%5D=2017-12-30&include=rejections
@@ -171,7 +169,6 @@ async function main() {
 		weekEnding = DateUtil.getDateTime(DateUtil.addDaysToDate(weekEnding, -7));
 	}
 
-	// instantiate 
 	var table = new Table({
 	    head: ['Day', 'Date', 'Project', 'Time']
 	});
@@ -184,6 +181,63 @@ async function main() {
 	console.log(table.toString());
 
 	// get last input - project date and time
+	const lastInput = projectTimes.data.sort((a, b) => {
+		return new Date(a.attributes.date) < new Date(b.attributes.date);
+	}).filter(projectTime => {
+		return projectTime.attributes.duration_mins > 0;
+	})[0];
+
+	const queryNextAction = async (lastInput) => {
+		const { date, duration_mins, project_id } = lastInput.attributes;
+		const projectName = projects.data.find(project => project.id === project_id).attributes.name;
+		const query = await inquirer.prompt([{
+			message: `Most recent: ${[ DateUtil.getNameOfDay(date), date, projectName, duration_mins / 60 + 'h' ].join()}. Repeat?`,
+			type: "expand",
+			name: "nextAction",
+			choices: [
+				{ key: 'y', name: "Yes, do the same on next day", value: 'repeat' },
+				{ key: 'n', name: "No, do nothing for now", value: 'nothing' },
+				{ key: 'e', name: "Edit", value: 'edit' }
+			]
+		}]);
+
+		return query.nextAction;
+	}
+
+	if (await queryNextAction(lastInput) === 'repeat') {
+		const lastDate = lastInput.attributes.date;
+		let nextDate = DateUtil.addDaysToDate(lastDate, 1);
+
+		while (DateUtil.getDateObject(nextDate).isWeekend) {
+			console.log("Before:", DateUtil.getDateObject(nextDate).dateTime);
+			nextDate = DateUtil.addDaysToDate(nextDate, 1);
+			console.log("After:", DateUtil.getDateObject(nextDate).dateTime);
+		}
+
+		const data = {
+			"data": {
+				"attributes": {
+					"project_id": lastInput.attributes.project_id,
+					"user_id": userData.data.id,
+					"date": DateUtil.getDateTime(nextDate),
+					"duration_mins": lastInput.attributes.duration_mins,
+					"approved_at": null,
+					"created_at": null,
+					"updated_at": null,
+					"is_rejected": false
+				},
+				"type": "project-times"
+			}
+		};
+		let res;
+		try {
+			res = await post("/project-times", data);
+		} catch(e) {
+			
+		}
+		console.log(res);
+	}
+
 	// ask if you'd like to repeat it
 	// POST for new Project time
 
@@ -193,13 +247,14 @@ async function main() {
 	// PATCH: update a project time...
 	// curl 'https://api.dev.justinapp.io/v1/project-times/27bf79ca-a185-4fa7-9e20-5346149bae92' -X PATCH -H 'pragma: no-cache' -H 'origin: https://dev.justinapp.io' -H 'accept-encoding: gzip, deflate, br' -H 'accept-language: en-GB,en;q=0.9,en-US;q=0.8,pl;q=0.7,de;q=0.6' -H 'authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyOWU1YmY2MC1mMWM5LTQwMmItYTM2Ni01MmFmYWNjNjc2NWEiLCJpc3MiOiJodHRwczovL2FwaS5kZXYuanVzdGluYXBwLmlvL3YxL2F1dGgiLCJpYXQiOjE1MTM2ODExNzMsImV4cCI6MTUxNDg5MDc3MywibmJmIjoxNTEzNjgxMTczLCJqdGkiOiJJY2tmM09XU0ZIVTA1UUpxIiwidXNlcl9pZCI6IjI5ZTViZjYwLWYxYzktNDAyYi1hMzY2LTUyYWZhY2M2NzY1YSJ9.laOXBJjy-f-5Cc5h0u9KDHuvu77BWdwdhy5LdRdA18M' -H 'content-type: application/vnd.api+json' -H 'accept: application/vnd.api+json' -H 'cache-control: no-cache' -H 'authority: api.dev.justinapp.io' -H 'user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36' -H 'referer: https://dev.justinapp.io/times/2017-12-18' --data-binary '{"data":{"id":"27bf79ca-a185-4fa7-9e20-5346149bae92","attributes":{"project_id":"baa95e34-4008-4915-99ea-e5cde907b65c","user_id":"29e5bf60-f1c9-402b-a366-52afacc6765a","date":"2017-12-20","duration_mins":300,"approved_at":null,"created_at":"2017-12-29T01:31:18.000Z","updated_at":"2017-12-29T01:31:18.000Z","is_rejected":false},"relationships":{"rejections":{"data":[]}},"type":"project-times"}}' --compressed
 
+	/*
 	const data = {
 		"data": {
 			"attributes": {
 				// "approved_at": null,
 				// "created_at": "2017-12-29T01:31:18.000Z",
 				// "date": "2017-12-20",
-				"duration_mins": 420,
+				"duration_mins": 0,
 				// "is_rejected": false,
 				// "project_id": "baa95e34-4008-4915-99ea-e5cde907b65c",
 				// "updated_at": "2017-12-29T01:31:18.000Z",
@@ -215,8 +270,9 @@ async function main() {
 		}
 	};
 
-	// const res = await post("/project-times/27bf79ca-a185-4fa7-9e20-5346149bae92", data, "PATCH");
+	const res = await post("/project-times/649055cb-aa8d-4c26-9762-898c498182b1", data, "PATCH");
 	// console.log(res);
+	//*/
 }
 
 main();

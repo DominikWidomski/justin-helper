@@ -87,6 +87,7 @@ module.exports = {
             dayText: this.getNameOfDay(date),
             monthText: this.getNameOfMonth(date),
             monthShortText: this.getNameOfMonth(date).substr(0, 3),
+            // @TODO: make isWeekend a util function too
             isWeekend: ((date.getDay() + 6) % 7) >= 5,
         };
     },
