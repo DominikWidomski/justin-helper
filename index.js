@@ -169,11 +169,14 @@ async function main() {
 	    head: ['Day', 'Date', 'Project', 'Time']
 	});
 
-	projectTimes.data.forEach(projectTime => {
-		const { date, duration_mins, project_id } = projectTime.attributes;
-		const projectName = projects.data.find(project => project.id === project_id).attributes.name;
-		table.push([ DateUtil.getNameOfDay(date), date, projectName, duration_mins / 60 ]);
-	});
+	// @TODO: Duplicated
+	projectTimes.data
+		.sort((a, b) => new Date(a.attributes.date) > new Date(b.attributes.date))
+		.forEach(projectTime => {
+			const { date, duration_mins, project_id } = projectTime.attributes;
+			const projectName = projects.data.find(project => project.id === project_id).attributes.name;
+			table.push([ DateUtil.getNameOfDay(date), date, projectName, duration_mins / 60 ]);
+		});
 	console.log(table.toString());
 
 	// get last input - project date and time
