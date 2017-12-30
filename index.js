@@ -43,15 +43,21 @@ async function get(path) {
 }
 
 async function post(path, data, method = "POST") {
-	const res = await fetch(basePath + path, {
+	const params = {
 		method,
 		headers: {
 			'Authorization': 'Bearer ' + token, 
 			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify(data)
-	});
+		}
+	};
 
+	if (data) {
+		params.body = JSON.stringify(data);
+	}
+
+	const res = await fetch(basePath + path, params);
+
+	// @TODO: Uniform solution for html or JSON?
 	return await res.json();
 }
 
