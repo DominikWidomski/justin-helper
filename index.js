@@ -129,18 +129,6 @@ async function main() {
 	
 	const projects = await getProjects();
 
-	// const selectedProject = await inquirer.prompt([{
-	// 	message: "Select a project",
-	// 	type: "list",
-	// 	name: "selectedProject",
-	// 	choices: projects.data.map(project => ({
-	// 		name: project.attributes.name,
-	// 		value: project.id
-	// 	}))
-	// }]);
-
-	// console.log("Selected Project:", selectedProject);
-
 	// GET project-times to check 
 	// https://api.dev.justinapp.io/v1/project-times?filter%5Buser_id%5D=29e5bf60-f1c9-402b-a366-52afacc6765a&filter%5Bdate%3Astart%5D=2017-12-25&filter%5Bdate%3Aend%5D=2017-12-30&include=rejections
 
@@ -207,20 +195,23 @@ async function main() {
 		return query.nextAction;
 	}
 
+	const nextAction = await queryNextAction(lastInput);
+
+	const lastDate = lastInput.attributes.date;
+	let nextDate = DateUtil.addDaysToDate(lastDate, 1);
+
+	while (DateUtil.getDateObject(nextDate).isWeekend) {
+		nextDate = DateUtil.addDaysToDate(nextDate, 1);
+	}
+
 	// POST for new Project time
-	if (await queryNextAction(lastInput) === 'repeat') {
-		const lastDate = lastInput.attributes.date;
-		let nextDate = DateUtil.addDaysToDate(lastDate, 1);
-
-		while (DateUtil.getDateObject(nextDate).isWeekend) {
-			nextDate = DateUtil.addDaysToDate(nextDate, 1);
-		}
-
+	if (nextAction === 'repeat') {
 		// not in the future
 		if (DateUtil.getDateTime(nextDate) <= DateUtil.getDateTime(new Date())) {
 			let projectName = projects.data.find(project => project.id === lastInput.attributes.project_id).attributes.name;
 			nextDate = DateUtil.getDateTime(nextDate);
 
+			// @TODO: Duplicated
 			const answer = await inquirer.prompt([{
 				message: `About to submit ${lastInput.attributes.duration_mins / 60}h to "${projectName}" on ${DateUtil.getNameOfDay(nextDate)} ${nextDate}`,
 				type: "confirm",
@@ -252,6 +243,7 @@ async function main() {
 					console.log(e);
 				}
 
+				// @TODO: Duplicated
 				const {
 					duration_mins, project_id, date
 				} = res.data.attributes;
@@ -261,6 +253,64 @@ async function main() {
 		} else {
 			// could probably do that before I even ask if you wanna do anything
 			console.log(chalk.cyan("No more recent dates before today found to enter 👌"));
+		}
+	} else if (nextAction === 'edit') {
+		const nextActionParams = await inquirer.prompt([
+			{
+				message: "Select a project",
+				type: "list",
+				name: "project_id",
+				default: lastInput.attributes.project_id,
+				choices: projects.data.map(project => ({
+					name: project.attributes.name,
+					value: project.id
+				}))
+			},
+			{
+				message: "Duration",
+				type: "list",
+				name: "duration_mins",
+				default: lastInput.attributes.duration_mins + "",
+				choices: [
+					{ name: "1h", value: "60" },
+					{ name: "2h", value: "120" },
+					{ name: "3h", value: "180" },
+					{ name: "4h", value: "240" },
+					{ name: "5h", value: "300" },
+					{ name: "6h", value: "360" },
+					{ name: "7h", value: "420" }
+				]
+			}
+		]);
+
+		// @TODO: Could combine this prompt with previous one, with dynamic prompts?
+		let projectName = projects.data.find(project => project.id === nextActionParams.project_id).attributes.name;
+		const answer = await inquirer.prompt([{
+			message: `About to submit ${nextActionParams.duration_mins / 60}h to "${projectName}" on ${DateUtil.getNameOfDay(nextDate)} ${DateUtil.getDateTime(nextDate)}`,
+			type: "confirm",
+			name: "confirm",
+			default: false
+		}]);
+
+		if (answer.confirm) {
+			const data = {
+				"data": {
+					"attributes": {
+						"project_id": nextActionParams.project_id,
+						"user_id": userData.data.id,
+						"date": nextDate,
+						"duration_mins": nextActionParams.duration_mins,
+					},
+					"type": "project-times"
+				}
+			};
+
+			let res = await post("/project-times", data);
+			const {
+				duration_mins, project_id, date
+			} = res.data.attributes;
+			projectName = projects.data.find(project => project.id === project_id).attributes.name;
+			console.log(`Submitted ${duration_mins / 60} to ${projectName} on ${DateUtil.getNameOfDay(date)} ${date}`);
 		}
 	}
 
