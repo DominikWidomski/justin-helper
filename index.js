@@ -248,16 +248,26 @@ async function main() {
 				let res;
 				try {
 					res = await post("/project-times", data);
+
+					// @TODO: ERROR HANDLING! Should this throw inside `get`/`post`?
+					if (res.errors) {
+						const {
+							title,
+							detail
+						} = res.errors[0];
+						console.error(chalk.red(`${title}: ${detail}`));
+						console.log(res.errors[0].source);
+					} else {
+						// @TODO: Duplicated
+						const {
+							duration_mins, project_id, date
+						} = res.data.attributes;
+						projectName = projects.data.find(project => project.id === project_id).attributes.name;
+						console.log(`Submitted ${duration_mins / 60} to ${projectName} on ${DateUtil.getNameOfDay(date)} ${date}`);
+					}
 				} catch(e) {
 					console.log(e);
 				}
-
-				// @TODO: Duplicated
-				const {
-					duration_mins, project_id, date
-				} = res.data.attributes;
-				projectName = projects.data.find(project => project.id === project_id).attributes.name;
-				console.log(`Submitted ${duration_mins / 60} to ${projectName} on ${DateUtil.getNameOfDay(date)} ${date}`);
 			}
 		} else {
 			// could probably do that before I even ask if you wanna do anything
