@@ -3,6 +3,7 @@ require('dotenv').config()
 const inquirer = require('inquirer');
 const chalk = require('chalk');
 const Table = require('cli-table2');
+const fuzzy = require('fuzzy');
 const DateUtil = require("./src/utils/date");
 require('isomorphic-fetch');
 const atob = require('atob');
@@ -118,6 +119,24 @@ function getTokenData(e) {
         return response
     }
 };
+
+// @TODO: ERROR HANDLING! Should this throw inside `get`/`post`?
+function handleProjectTimesPostResponse(res) {
+	if (res.errors) {
+		const {
+			title,
+			detail
+		} = res.errors[0];
+		console.error(chalk.red(`${title}: ${detail}`));
+		console.log(res.errors[0].source);
+	} else {
+		const {
+			duration_mins, project_id, date
+		} = res.data.attributes;
+		projectName = projects.data.find(project => project.id === project_id).attributes.name;
+		console.log(`Submitted ${duration_mins / 60} to ${projectName} on ${DateUtil.getNameOfDay(date)} ${date}`);
+	}
+}
 
 async function main() {
 	// @TODO: Indicate progress of "Authenticating..."
@@ -249,22 +268,7 @@ async function main() {
 				try {
 					res = await post("/project-times", data);
 
-					// @TODO: ERROR HANDLING! Should this throw inside `get`/`post`?
-					if (res.errors) {
-						const {
-							title,
-							detail
-						} = res.errors[0];
-						console.error(chalk.red(`${title}: ${detail}`));
-						console.log(res.errors[0].source);
-					} else {
-						// @TODO: Duplicated
-						const {
-							duration_mins, project_id, date
-						} = res.data.attributes;
-						projectName = projects.data.find(project => project.id === project_id).attributes.name;
-						console.log(`Submitted ${duration_mins / 60} to ${projectName} on ${DateUtil.getNameOfDay(date)} ${date}`);
-					}
+					handleProjectTimesPostResponse(res)
 				} catch(e) {
 					console.log(e);
 				}
@@ -277,13 +281,24 @@ async function main() {
 		const nextActionParams = await inquirer.prompt([
 			{
 				message: "Select a project",
-				type: "list",
+				type: "autocomplete",
 				name: "project_id",
 				default: lastInput.attributes.project_id,
-				choices: projects.data.map(project => ({
-					name: project.attributes.name,
-					value: project.id
-				}))
+				source: (answers, input = "") => {
+					const filteredProjects = fuzzy.filter(input, projects.data, {
+						extract: project => project.attributes.name
+					});
+
+					return new Promise(resolve => {
+						resolve(filteredProjects.map(project => {
+							// @TODO: why the fuck is this different...! FUZZYYYY!!!
+							return {
+								name: project.original ? project.original.attributes.name : project.attributes.name,
+								value: project.original ? project.original.id : project.id
+							};
+						}));
+					});
+				}
 			},
 			{
 				message: "Duration",
@@ -324,12 +339,10 @@ async function main() {
 				}
 			};
 
+			// @TODO: Error handling here too!!!
 			let res = await post("/project-times", data);
-			const {
-				duration_mins, project_id, date
-			} = res.data.attributes;
-			projectName = projects.data.find(project => project.id === project_id).attributes.name;
-			console.log(`Submitted ${duration_mins / 60} to ${projectName} on ${DateUtil.getNameOfDay(date)} ${date}`);
+
+			handleProjectTimesPostResponse(res);
 		}
 	}
 
