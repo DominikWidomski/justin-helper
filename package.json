@@ -4,6 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
+    "@slack/events-api": "^1.0.1",
+    "@slack/interactive-messages": "^0.2.0",
     "atob": "^2.0.3",
     "base64url": "^2.0.0",
     "btoa": "^1.1.2",
