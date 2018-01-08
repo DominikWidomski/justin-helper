@@ -1,5 +1,7 @@
 require('dotenv').config()
 
+const fs = require('fs');
+const path = require('path');
 const inquirer = require('inquirer');
 const chalk = require('chalk');
 const Table = require('cli-table2');
@@ -139,9 +141,23 @@ function handleProjectTimesPostResponse(res) {
 }
 
 async function main() {
-	// @TODO: Indicate progress of "Authenticating..."
-	const tokenResponse = await getToken();
-	token = tokenResponse.token;
+	const authTokenFilename = ".justinauthtoken";
+	const homeDir = require('os').homedir();
+	const authTokenFilepath = path.resolve(homeDir, authTokenFilename);
+	
+	if (fs.existsSync(authTokenFilepath)) {
+		const data = fs.readFileSync(authTokenFilepath);
+		token = data.toString()
+	} else {
+		// @TODO: Indicate progress of "Authenticating..."
+		const tokenResponse = await getToken();
+		token = tokenResponse.token;
+
+		fs.appendFileSync(authTokenFilepath, token, {
+			mode: 0o666,
+			flags: 'w'
+		});
+	}
 
 	const tokenData = getTokenData(token);
 	const userData = await getUser(tokenData['user_id']);
