@@ -7,6 +7,7 @@ const fuzzy = require('fuzzy');
 const DateUtil = require("./src/utils/date");
 
 const JustinClient = require("./src/justin/JustinClient");
+const submitNewProjectTime = require('./src/actions/submitNewProjectTime');
 
 inquirer.registerPrompt('autocomplete', require('inquirer-autocomplete-prompt'));
 
@@ -23,16 +24,6 @@ const justin = new JustinClient({
 	basePath: process.env.API_BASE_PATH,
 	appToken: process.env.APP_TOKEN
 });
-
-function showSuccessfulSubmissionResponse(res, projects) {
-	const {
-		duration_mins, project_id, date
-	} = res.data.attributes;
-	
-	projectName = projects.data.find(project => project.id === project_id).attributes.name;
-	
-	console.log(`Submitted ${duration_mins / 60} to ${projectName} on ${DateUtil.getNameOfDay(date)} ${date}`);
-}
 
 async function main() {
 	await justin.authenticate(process.env.email, process.env.password);
@@ -128,42 +119,7 @@ async function main() {
 	if (nextAction === 'repeat') {
 		// not in the future
 		if (DateUtil.getDateTime(nextDate) <= DateUtil.getDateTime(new Date())) {
-			let projectName = projects.data.find(project => project.id === lastInput.attributes.project_id).attributes.name;
-			nextDate = DateUtil.getDateTime(nextDate);
-
-			// @TODO: Duplicated
-			const answer = await inquirer.prompt([{
-				message: `About to submit ${lastInput.attributes.duration_mins / 60}h to "${projectName}" on ${DateUtil.getNameOfDay(nextDate)} ${nextDate}`,
-				type: "confirm",
-				name: "confirm",
-				default: false
-			}]);
-
-			if (answer.confirm) {
-				const data = {
-					"data": {
-						"attributes": {
-							"project_id": lastInput.attributes.project_id,
-							"user_id": userData.data.id,
-							"date": nextDate,
-							"duration_mins": lastInput.attributes.duration_mins,
-						},
-						"type": "project-times"
-					}
-				};
-
-				// @TODO: this should maybe handle if the next day is a record already, to PATCH too...
-				// Not sure but the server check could just be if there is a record for a project-to-user-to-date
-				// so could check the same on client, provided we have sufficient info,
-				// maybe we get more dates ahead of time?
-				try {
-					const res = await justin.post("/project-times", data);
-
-					showSuccessfulSubmissionResponse(res, projects);
-				} catch(e) {
-					console.log(e);
-				}
-			}
+			submitNewProjectTime(justin, nextDate, lastInput.attributes, userData.data.id, projects);
 		} else {
 			// could probably do that before I even ask if you wanna do anything
 			console.log(chalk.cyan("No more recent dates before today found to enter 👌"));
@@ -216,32 +172,7 @@ async function main() {
 		]);
 
 		// @TODO: Could combine this prompt with previous one, with dynamic prompts?
-		let projectName = projects.data.find(project => project.id === nextActionParams.project_id).attributes.name;
-		const answer = await inquirer.prompt([{
-			message: `About to submit ${nextActionParams.duration_mins / 60}h to "${projectName}" on ${DateUtil.getNameOfDay(nextDate)} ${DateUtil.getDateTime(nextDate)}`,
-			type: "confirm",
-			name: "confirm",
-			default: false
-		}]);
-
-		if (answer.confirm) {
-			const data = {
-				"data": {
-					"attributes": {
-						"project_id": nextActionParams.project_id,
-						"user_id": userData.data.id,
-						"date": nextDate,
-						"duration_mins": nextActionParams.duration_mins,
-					},
-					"type": "project-times"
-				}
-			};
-
-			// @TODO: Error handling here too!!!
-			let res = await justin.post("/project-times", data);
-
-			showSuccessfulSubmissionResponse(res, projects);
-		}
+		submitNewProjectTime(justin, nextDate, nextActionParams, userData.data.id, projects);
 	}
 
 	// POST: Create project time, time in minutes 420min -> 7h
