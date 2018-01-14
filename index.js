@@ -1,26 +1,14 @@
 require('dotenv').config()
 
-const fs = require('fs');
-const path = require('path');
 const inquirer = require('inquirer');
 const chalk = require('chalk');
 const Table = require('cli-table2');
 const fuzzy = require('fuzzy');
 const DateUtil = require("./src/utils/date");
-require('isomorphic-fetch');
-const atob = require('atob');
-const crypto = require('crypto');
-const base64url = require('base64url');
+
+const JustinClient = require("./src/justin/JustinClient");
 
 inquirer.registerPrompt('autocomplete', require('inquirer-autocomplete-prompt'));
-
-const app_token = process.env.APP_TOKEN;
-const basePath = process.env.API_BASE_PATH;
-const authPath = '/auth';
-
-const serverTokenEndpoint = basePath + authPath;
-const serverTokenRefreshEndpoint = serverTokenEndpoint + '/refresh-token';
-const identificationField = 'email';
 
 process
   .on('unhandledRejection', (reason, p) => {
@@ -31,137 +19,24 @@ process
     process.exit(1);
   });
 
-let token;
-let projects;
+const justin = new JustinClient({
+	basePath: process.env.API_BASE_PATH,
+	appToken: process.env.APP_TOKEN
+});
 
-async function get(path) {
-	const res = await fetch(basePath + path, {
-		method: 'GET',
-		headers: {
-			'Authorization': 'Bearer ' + token, 
-			'Content-Type': 'application/x-www-form-urlencoded'
-		}, 
-	});
-
-	return await res.json();
-}
-
-async function post(path, data, method = "POST") {
-	const params = {
-		method,
-		headers: {
-			'Authorization': 'Bearer ' + token, 
-			'Content-Type': 'application/json'
-		}
-	};
-
-	if (data) {
-		params.body = JSON.stringify(data);
-	}
-
-	const res = await fetch(basePath + path, params);
-
-	// @TODO: Uniform solution for html or JSON?
-	return await res.json();
-}
-
-async function getUser(userId) {
-	return await get('/users/' + userId);
-}
-
-async function getProjects() {
-	return await get('/projects');
-}
-
-async function getProjectTimes(filters, includes) {
-	let uri = '/project-times';
-
-	let query = [];
-
-	if (filters) {
-		query = Object.keys(filters).map(key => {
-			return `${encodeURIComponent(`filter[${key}]`)}=${filters[key]}`;
-		});
-	}
-
-	if (includes) {
-		query.push(`include=${includes.join(',')}`);
-	}
-
-	if (query.length) {
-		query = query.join('&');
-		uri += `?${query}`;
-	}
-
-	return await get(uri);
-}
-
-async function getToken() {
-	const res = await fetch(serverTokenEndpoint, {
-		method: 'POST',
-		headers: {
-			'content-type': 'application/json'
-		},
-		body: JSON.stringify({
-			email: process.env.email,
-			password: process.env.password,
-			app_token
-		})
-	});
-
-	return await res.json();
-}
-
-function getTokenData(e) {
-    const token = e.split(".")[1]
-    const response = decodeURIComponent(atob(token))
-    try {
-        return JSON.parse(response)
-    } catch (e) {
-    	console.log(e);
-        return response
-    }
-};
-
-// @TODO: ERROR HANDLING! Should this throw inside `get`/`post`?
-function handleProjectTimesPostResponse(res) {
-	if (res.errors) {
-		const {
-			title,
-			detail
-		} = res.errors[0];
-		console.error(chalk.red(`${title}: ${detail}`));
-		console.log(res.errors[0].source);
-	} else {
-		const {
-			duration_mins, project_id, date
-		} = res.data.attributes;
-		projectName = projects.data.find(project => project.id === project_id).attributes.name;
-		console.log(`Submitted ${duration_mins / 60} to ${projectName} on ${DateUtil.getNameOfDay(date)} ${date}`);
-	}
+function showSuccessfulSubmissionResponse(res, projects) {
+	const {
+		duration_mins, project_id, date
+	} = res.data.attributes;
+	
+	projectName = projects.data.find(project => project.id === project_id).attributes.name;
+	
+	console.log(`Submitted ${duration_mins / 60} to ${projectName} on ${DateUtil.getNameOfDay(date)} ${date}`);
 }
 
 async function main() {
-	const authTokenFilename = ".justinauthtoken";
-	const homeDir = require('os').homedir();
-	const authTokenFilepath = path.resolve(homeDir, authTokenFilename);
-	
-	if (fs.existsSync(authTokenFilepath)) {
-		const data = fs.readFileSync(authTokenFilepath);
-		token = data.toString()
-	} else {
-		// @TODO: Indicate progress of "Authenticating..."
-		const tokenResponse = await getToken();
-		token = tokenResponse.token;
-
-		fs.appendFileSync(authTokenFilepath, token, {
-			mode: 0o666,
-			flags: 'w'
-		});
-	}
-
-	const tokenData = getTokenData(token);
-	const userData = await getUser(tokenData['user_id']);
+	await justin.authenticate(process.env.email, process.env.password);
+	const userData = await justin.getUser(justin.tokenData['user_id']);
 
 	const answers = await inquirer.prompt([{
 		message: `Is this you: ${userData.data.id} ${userData.data.attributes.name}`,
@@ -169,7 +44,7 @@ async function main() {
 		name: "confirmIdentity",
 	}]);
 	
-	projects = await getProjects();
+	const projects = await justin.getProjects();
 
 	// GET project-times to check 
 	// https://api.dev.justinapp.io/v1/project-times?filter%5Buser_id%5D=29e5bf60-f1c9-402b-a366-52afacc6765a&filter%5Bdate%3Astart%5D=2017-12-25&filter%5Bdate%3Aend%5D=2017-12-30&include=rejections
@@ -183,7 +58,7 @@ async function main() {
 	while (lookEarlier) {
 		console.log("Week:", weekBeginning, weekEnding);
 
-		projectTimes = await getProjectTimes({
+		projectTimes = await justin.getProjectTimes({
 			user_id: userData.data.id,
 			'date:start': weekBeginning,
 			'date:end': weekEnding
@@ -281,11 +156,10 @@ async function main() {
 				// Not sure but the server check could just be if there is a record for a project-to-user-to-date
 				// so could check the same on client, provided we have sufficient info,
 				// maybe we get more dates ahead of time?
-				let res;
 				try {
-					res = await post("/project-times", data);
+					const res = await justin.post("/project-times", data);
 
-					handleProjectTimesPostResponse(res)
+					showSuccessfulSubmissionResponse(res, projects);
 				} catch(e) {
 					console.log(e);
 				}
@@ -364,9 +238,9 @@ async function main() {
 			};
 
 			// @TODO: Error handling here too!!!
-			let res = await post("/project-times", data);
+			let res = await justin.post("/project-times", data);
 
-			handleProjectTimesPostResponse(res);
+			showSuccessfulSubmissionResponse(res, projects);
 		}
 	}
 
@@ -378,7 +252,7 @@ async function main() {
 
 	/*
 	const data = {
-		"data": {
+		"data": {€
 			"attributes": {
 				// "approved_at": null,
 				// "created_at": "2017-12-29T01:31:18.000Z",
