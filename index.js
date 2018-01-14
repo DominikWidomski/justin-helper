@@ -295,6 +295,13 @@ async function main() {
 			console.log(chalk.cyan("No more recent dates before today found to enter 👌"));
 		}
 	} else if (nextAction === 'edit') {
+		function composeName(project) {
+			const attributes = project.original ? project.original.attributes : project.attributes;
+			const isEnded = new Date(attributes.end_date) < new Date(lastInput.attributes.date);
+
+			return `${attributes.name} ${isEnded ? '[ended]' : '' }`;
+		}
+
 		const nextActionParams = await inquirer.prompt([
 			{
 				message: "Select a project",
@@ -310,7 +317,7 @@ async function main() {
 						resolve(filteredProjects.map(project => {
 							// @TODO: why the fuck is this different...! FUZZYYYY!!!
 							return {
-								name: project.original ? project.original.attributes.name : project.attributes.name,
+								name: composeName(project),
 								value: project.original ? project.original.id : project.id
 							};
 						}));
