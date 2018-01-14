@@ -32,6 +32,7 @@ process
   });
 
 let token;
+let projects;
 
 async function get(path) {
 	const res = await fetch(basePath + path, {
@@ -168,7 +169,7 @@ async function main() {
 		name: "confirmIdentity",
 	}]);
 	
-	const projects = await getProjects();
+	projects = await getProjects();
 
 	// GET project-times to check 
 	// https://api.dev.justinapp.io/v1/project-times?filter%5Buser_id%5D=29e5bf60-f1c9-402b-a366-52afacc6765a&filter%5Bdate%3Astart%5D=2017-12-25&filter%5Bdate%3Aend%5D=2017-12-30&include=rejections
