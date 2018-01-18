@@ -5,6 +5,8 @@ const atob = require('atob');
 
 const DateUtil = require("../utils/date");
 
+// const fetch = require("../utils/mockServerResponses")();
+
 // const serverTokenEndpoint = basePath + authPath;
 // const serverTokenRefreshEndpoint = serverTokenEndpoint + '/refresh-token';
 
