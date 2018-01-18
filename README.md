@@ -4,6 +4,27 @@ CLI tool for justin, ultimately to be automated and plug into slack.
 
 ## TODO:
 
+- [x] split out justin client code
+
+- [x] Get's last week for some reason on continuing with actions.
+- [ ] Submitting several things for one day (don't continue untill day === 7h?)
+
+main thing runs actions
+which are async
+which return prompt answers or something to decide on next
+
+how to keep node running (not churning in an infinite while) until explicit exit?
+but so that its not just waiting for input, so it can update view...
+i guess it's just running actually...
+Maybe generators and `yield` come in somewhere
+Maybe construct it with a queue of actions?
+
+when we hit "today" or whatever condition for not looping is any more, show the menu.
+
+show progress somehow. Can we have a `...` loading progress, is there a package for that already?
+
+- [ ] ... what about a search like in github... so I can filter out is:not:ended for example
+
 - [ ] continuous process, not just one entry at a time.
 - [ ] Sometimes projects change. What if it's no longer active? Won't be in the projects thing I receive or it's attribute?
 	- [ ] Show that the project has ended (API doesn't prevent submission)
@@ -20,6 +41,10 @@ CLI tool for justin, ultimately to be automated and plug into slack.
 - [ ] `-i` flag, for actually asking prompts, otherwise autorun the whole thing to repeat next day.
 - [ ] `-e` flag to interactively only edit the next entry, run everything as otherwise expected.
 - [ ] Default to 7h for day, and to remainder of the time if multiple projects in day.
+
+
+- [ ] some custom rendering for autocomplete list of projects (dim inactive / ended ones etc) (PR to package for custom item render function, seems legit?)
+
 
 
 ---
