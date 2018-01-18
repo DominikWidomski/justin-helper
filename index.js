@@ -44,16 +44,21 @@ async function main() {
 	let weekBeginning = DateUtil.getDateTime(DateUtil.getStartOfWeek(today));
 	let weekEnding = DateUtil.getDateTime(DateUtil.addDaysToDate(weekBeginning, 6));
 	let lookEarlier = true;
+	// @TODO: Store all retrieved projectTimes in a cache, handle only a week at a time
 	let projectTimes = [];
 
-	while (lookEarlier) {
-		console.log("Week:", weekBeginning, weekEnding);
-
-		projectTimes = await justin.getProjectTimes({
+	const getProjectTimes = (userId, weekBeginning, weekEnding) => {
+		return justin.getProjectTimes({
 			user_id: userData.data.id,
 			'date:start': weekBeginning,
 			'date:end': weekEnding
 		}, ['rejections']);
+	}
+
+	while (lookEarlier) {
+		console.log("Week:", weekBeginning, weekEnding);
+
+		projectTimes = await getProjectTimes(userData.data.id, weekBeginning, weekEnding);
 
 		const result = await inquirer.prompt([{
 			type: "confirm",
@@ -63,32 +68,58 @@ async function main() {
 		}]);	
 
 		lookEarlier = result.lookEarlier;
-		weekBeginning = DateUtil.getDateTime(DateUtil.addDaysToDate(weekBeginning, -7));
-		weekEnding = DateUtil.getDateTime(DateUtil.addDaysToDate(weekEnding, -7));
+		if (lookEarlier) {
+			weekBeginning = DateUtil.getDateTime(DateUtil.addDaysToDate(weekBeginning, -7));
+			weekEnding = DateUtil.getDateTime(DateUtil.addDaysToDate(weekBeginning, 6));
+		}
 	}
 
-	var table = new Table({
-	    head: ['Day', 'Date', 'Project', 'Time']
-	});
-
-	// @TODO: Duplicated
-	projectTimes.data
-		.sort((a, b) => new Date(a.attributes.date) > new Date(b.attributes.date))
-		.forEach(projectTime => {
-			const { date, duration_mins, project_id } = projectTime.attributes;
-			const projectName = projects.data.find(project => project.id === project_id).attributes.name;
-			table.push([ DateUtil.getNameOfDay(date), date, projectName, duration_mins / 60 ]);
+	/**
+	 * Renders a table describing an array of projectTime objects
+	 *
+	 * @TODO: Render several projects for the day (don't show day name multiple times)
+	 * 
+	 * @param {object} projectTimes
+	 * @param {object} projects
+	 */
+	const showWeekTable = (projectTimes, projects) => {
+		const table = new Table({
+		    head: ['Day', 'Date', 'Project', 'Time']
 		});
-	console.log(table.toString());
+		
+		// Sort chronologically
+		projectTimes.data
+			.sort((a, b) => new Date(a.attributes.date) > new Date(b.attributes.date))
+			.forEach(projectTime => {
+				const { date, duration_mins, project_id } = projectTime.attributes;
+				const projectName = projects.data.find(project => project.id === project_id).attributes.name;
+				table.push([ DateUtil.getNameOfDay(date), date, projectName, duration_mins / 60 ]);
+			});
 
-	// get last input - project date and time
-	const lastInput = projectTimes.data.sort((a, b) => {
-		return new Date(a.attributes.date) < new Date(b.attributes.date);
-	}).filter(projectTime => {
-		return projectTime.attributes.duration_mins > 0;
-	})[0];
+		console.log(table.toString());
+	}
+
+	/**
+	 * Retrieves the last chronologically projectTime with non-zero time entry
+	 *
+	 * @param {object} projectTimes
+	 *
+	 * @return {object}
+	 */
+	const getLastProjectTime = (projectTimes) => {
+		return projectTimes.data
+			.sort((a, b) => new Date(a.attributes.date) < new Date(b.attributes.date))
+			.filter(projectTime => projectTime.attributes.duration_mins > 0)[0];
+	}
 
 	// ask if you'd like to repeat it
+	/**
+	 * Inquire user's next input based on last input
+	 *
+	 * @param {object} lastInput
+	 *
+	 * @return {object}
+	 */
 	const queryNextAction = async (lastInput) => {
 		const { date, duration_mins, project_id } = lastInput.attributes;
 		const projectName = projects.data.find(project => project.id === project_id).attributes.name;
@@ -106,33 +137,15 @@ async function main() {
 		return query.nextAction;
 	}
 
-	const nextAction = await queryNextAction(lastInput);
+	const composeName = (project, lastInput) => {
+		const attributes = project.original ? project.original.attributes : project.attributes;
+		const isEnded = new Date(attributes.end_date) < new Date(lastInput.attributes.date);
 
-	const lastDate = lastInput.attributes.date;
-	let nextDate = DateUtil.addDaysToDate(lastDate, 1);
-
-	while (DateUtil.getDateObject(nextDate).isWeekend) {
-		nextDate = DateUtil.addDaysToDate(nextDate, 1);
+		return `${attributes.name} ${isEnded ? '[ended]' : '' }`;
 	}
 
-	// POST for new Project time
-	if (nextAction === 'repeat') {
-		// not in the future
-		if (DateUtil.getDateTime(nextDate) <= DateUtil.getDateTime(new Date())) {
-			submitNewProjectTime(justin, nextDate, lastInput.attributes, userData.data.id, projects);
-		} else {
-			// could probably do that before I even ask if you wanna do anything
-			console.log(chalk.cyan("No more recent dates before today found to enter 👌"));
-		}
-	} else if (nextAction === 'edit') {
-		function composeName(project) {
-			const attributes = project.original ? project.original.attributes : project.attributes;
-			const isEnded = new Date(attributes.end_date) < new Date(lastInput.attributes.date);
-
-			return `${attributes.name} ${isEnded ? '[ended]' : '' }`;
-		}
-
-		const nextActionParams = await inquirer.prompt([
+	const getNextActionParams = async (lastInput, projects) => {
+		return await inquirer.prompt([
 			{
 				message: "Select a project",
 				type: "autocomplete",
@@ -147,7 +160,7 @@ async function main() {
 						resolve(filteredProjects.map(project => {
 							// @TODO: why the fuck is this different...! FUZZYYYY!!!
 							return {
-								name: composeName(project),
+								name: composeName(project, lastInput),
 								value: project.original ? project.original.id : project.id
 							};
 						}));
@@ -170,9 +183,57 @@ async function main() {
 				]
 			}
 		]);
+	}
 
-		// @TODO: Could combine this prompt with previous one, with dynamic prompts?
-		submitNewProjectTime(justin, nextDate, nextActionParams, userData.data.id, projects);
+	//========================================
+
+	let nextAction = {
+		type: "checkNext",
+		showWeek: true
+	};
+
+	while (nextAction.type !== "exit") {
+		if (nextAction.showWeek) {
+			showWeekTable(projectTimes, projects);
+		}
+
+		// get last input - project date and time
+		const lastInput = getLastProjectTime(projectTimes);
+
+		const lastDate = lastInput.attributes.date;
+		let nextDate = DateUtil.addDaysToDate(lastDate, 1);
+
+		while (DateUtil.getDateObject(nextDate).isWeekend) {
+			nextDate = DateUtil.addDaysToDate(nextDate, 1);
+		}
+
+		const action = await queryNextAction(lastInput);
+		// POST for new Project time
+		// @TODO: Unify with the { type: string } type
+		if (action === 'repeat') {
+			// not in the future
+			if (DateUtil.getDateTime(nextDate) <= DateUtil.getDateTime(new Date())) {
+				await submitNewProjectTime(justin, nextDate, lastInput.attributes, userData.data.id, projects);
+			} else {
+				// could probably do that before I even ask if you wanna do anything
+				console.log(chalk.cyan("No more recent dates before today found to enter 👌"));
+			}
+		} else if (action === 'edit') {
+			const nextActionParams = await getNextActionParams(lastInput, projects);
+
+			// @TODO: Could combine this prompt with previous one, with dynamic prompts?
+			// @TODO: Check if time exists, maybe try, and edit if it does
+			await submitNewProjectTime(justin, nextDate, nextActionParams, userData.data.id, projects);
+		}
+
+		// Refreshing projectTimes for current week
+		// @TODO: get next week if we've moved on further
+		projectTimes = await getProjectTimes(userData.data.id, weekBeginning, weekEnding);
+
+		nextAction = {
+			type: "checkNext",
+			showWeek: true
+		};
 	}
 
 	// POST: Create project time, time in minutes 420min -> 7h
