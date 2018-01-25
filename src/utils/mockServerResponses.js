@@ -33,7 +33,20 @@ module.exports = () => {
                     duration_mins: '420'
                 }
             }
-        ]
+        ],
+        meta: {
+            total: 1
+        }
+    });
+
+    mock.respondTo("POST", "https://api.dev.justinapp.io/v1/project-times", {
+        data: {
+            attributes: {
+                date: '2018-01-01',
+                project_id: 1,
+                duration_mins: '420'
+            }
+        }
     });
 
     return mock.fetch.bind(mock);

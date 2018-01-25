@@ -2,12 +2,13 @@ require('dotenv').config()
 
 const inquirer = require('inquirer');
 const chalk = require('chalk');
-const Table = require('cli-table2');
 const fuzzy = require('fuzzy');
 const DateUtil = require("./src/utils/date");
 
 const JustinClient = require("./src/justin/JustinClient");
 const submitNewProjectTime = require('./src/actions/submitNewProjectTime');
+const showWeekTable = require('./src/actions/showWeekTable');
+const getNextActionParams = require('./src/actions/getNextActionParams');
 
 inquirer.registerPrompt('autocomplete', require('inquirer-autocomplete-prompt'));
 
@@ -63,6 +64,7 @@ async function main() {
 		const result = await inquirer.prompt([{
 			type: "confirm",
 			name: "lookEarlier",
+			// if found times, stay in this week, otherwise move further back
 			default: projectTimes.meta.total ? false : true,
 			message: `Found ${projectTimes.meta.total} dates for this week. Look earlier?`
 		}]);	
@@ -72,31 +74,6 @@ async function main() {
 			weekBeginning = DateUtil.getDateTime(DateUtil.addDaysToDate(weekBeginning, -7));
 			weekEnding = DateUtil.getDateTime(DateUtil.addDaysToDate(weekBeginning, 6));
 		}
-	}
-
-	/**
-	 * Renders a table describing an array of projectTime objects
-	 *
-	 * @TODO: Render several projects for the day (don't show day name multiple times)
-	 * 
-	 * @param {object} projectTimes
-	 * @param {object} projects
-	 */
-	const showWeekTable = (projectTimes, projects) => {
-		const table = new Table({
-		    head: ['Day', 'Date', 'Project', 'Time']
-		});
-		
-		// Sort chronologically
-		projectTimes.data
-			.sort((a, b) => new Date(a.attributes.date) > new Date(b.attributes.date))
-			.forEach(projectTime => {
-				const { date, duration_mins, project_id } = projectTime.attributes;
-				const projectName = projects.data.find(project => project.id === project_id).attributes.name;
-				table.push([ DateUtil.getNameOfDay(date), date, projectName, duration_mins / 60 ]);
-			});
-
-		console.log(table.toString());
 	}
 
 	/**
@@ -135,54 +112,6 @@ async function main() {
 		}]);
 
 		return query.nextAction;
-	}
-
-	const composeName = (project, lastInput) => {
-		const attributes = project.original ? project.original.attributes : project.attributes;
-		const isEnded = new Date(attributes.end_date) < new Date(lastInput.attributes.date);
-
-		return `${attributes.name} ${isEnded ? '[ended]' : '' }`;
-	}
-
-	const getNextActionParams = async (lastInput, projects) => {
-		return await inquirer.prompt([
-			{
-				message: "Select a project",
-				type: "autocomplete",
-				name: "project_id",
-				default: lastInput.attributes.project_id,
-				source: (answers, input = "") => {
-					const filteredProjects = fuzzy.filter(input, projects.data, {
-						extract: project => project.attributes.name
-					});
-
-					return new Promise(resolve => {
-						resolve(filteredProjects.map(project => {
-							// @TODO: why the fuck is this different...! FUZZYYYY!!!
-							return {
-								name: composeName(project, lastInput),
-								value: project.original ? project.original.id : project.id
-							};
-						}));
-					});
-				}
-			},
-			{
-				message: "Duration",
-				type: "list",
-				name: "duration_mins",
-				default: lastInput.attributes.duration_mins + "",
-				choices: [
-					{ name: "1h", value: "60" },
-					{ name: "2h", value: "120" },
-					{ name: "3h", value: "180" },
-					{ name: "4h", value: "240" },
-					{ name: "5h", value: "300" },
-					{ name: "6h", value: "360" },
-					{ name: "7h", value: "420" }
-				]
-			}
-		]);
 	}
 
 	//========================================
