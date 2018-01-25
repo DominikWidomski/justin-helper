@@ -13,13 +13,13 @@ main thing runs actions
 which are async
 which return prompt answers or something to decide on next
 
+when we hit "today" or whatever condition for not looping is any more, show the menu.
+
 how to keep node running (not churning in an infinite while) until explicit exit?
 but so that its not just waiting for input, so it can update view...
 i guess it's just running actually...
 Maybe generators and `yield` come in somewhere
 Maybe construct it with a queue of actions?
-
-when we hit "today" or whatever condition for not looping is any more, show the menu.
 
 show progress somehow. Can we have a `...` loading progress, is there a package for that already?
 
