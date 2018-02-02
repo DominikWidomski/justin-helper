@@ -56,20 +56,39 @@ async function main() {
 		}, ['rejections']);
 	}
 
+	/**
+	 * Groups two arrays of ProjectTime query response data and sorts them by date
+	 * 
+	 * @param {Array} oldCollection 
+	 * @param {Array} newCollection
+	 * 
+	 * @returns {Array}
+	 */
+	function resolveOrderedProjectTimes(oldCollection, newCollection) {
+		const seen = {};
+		
+		const data = [...oldCollection, ...newCollection]
+			.filter(a => seen[a.id] ? false : (seen[a.id] = true))
+			.sort((a, b) => new Date(a.attributes.date) - new Date(b.attributes.date));
+		
+		return data;
+	}
+
 	while (lookEarlier) {
 		console.log("Week:", weekBeginning, weekEnding);
 
-		projectTimes = await getProjectTimes(userData.data.id, weekBeginning, weekEnding);
-
+		const thisWeek = await getProjectTimes(userData.data.id, weekBeginning, weekEnding);
 		const result = await inquirer.prompt([{
 			type: "confirm",
 			name: "lookEarlier",
 			// if found times, stay in this week, otherwise move further back
-			default: projectTimes.meta.total ? false : true,
-			message: `Found ${projectTimes.meta.total} dates for this week. Look earlier?`
+			default: thisWeek.meta.total ? false : true,
+			message: `Found ${thisWeek.meta.total} dates for this week. Look earlier?`
 		}]);	
 
-		lookEarlier = result.lookEarlier;
+		projectTimes = resolveOrderedProjectTimes(projectTimes, thisWeek.data);
+
+		({ lookEarlier } = result);
 		if (lookEarlier) {
 			weekBeginning = DateUtil.getDateTime(DateUtil.addDaysToDate(weekBeginning, -7));
 			weekEnding = DateUtil.getDateTime(DateUtil.addDaysToDate(weekBeginning, 6));
@@ -84,7 +103,7 @@ async function main() {
 	 * @return {object}
 	 */
 	const getLastProjectTime = (projectTimes) => {
-		return projectTimes.data
+		return projectTimes
 			.sort((a, b) => new Date(a.attributes.date) < new Date(b.attributes.date))
 			.filter(projectTime => projectTime.attributes.duration_mins > 0)[0];
 	}
@@ -124,7 +143,10 @@ async function main() {
 
 	while (nextAction.type !== "exit") {
 		if (nextAction.showWeek) {
-			showWeekTable(projectTimes, projects);
+			showWeekTable(projectTimes, projects, {
+				startDate: weekBeginning,
+				endDate: weekEnding
+			});
 		}
 
 		// get last input - project date and time
@@ -151,6 +173,7 @@ async function main() {
 		} else if (action === 'edit') {
 			const nextActionParams = await getNextActionParams(lastInput, projects);
 
+			// @TODO: If reply No, should try to get params again?
 			// @TODO: Could combine this prompt with previous one, with dynamic prompts?
 			// @TODO: Check if time exists, maybe try, and edit if it does
 			await submitNewProjectTime(justin, nextDate, nextActionParams, userData.data.id, projects);
@@ -177,7 +200,18 @@ async function main() {
 
 		// Refreshing projectTimes for current week
 		// @TODO: get next week if we've moved on further
-		projectTimes = await getProjectTimes(userData.data.id, weekBeginning, weekEnding);
+		nextDate = DateUtil.addDaysToDate(nextDate, 1);
+		const isCurrentWeek = nextDate >= new Date(weekBeginning) && nextDate <= new Date(weekEnding);
+		if (!isCurrentWeek) {
+			weekBeginning = DateUtil.getStartOfWeek(nextDate);
+			weekEnding = DateUtil.addDaysToDate(weekBeginning, 6);
+		}
+		try	{
+			const newProjectTimes = (await getProjectTimes(userData.data.id, weekBeginning, weekEnding)).data;
+			projectTimes = resolveOrderedProjectTimes(projectTimes, newProjectTimes);
+		} catch (e) {
+			console.log(e);
+		}
 
 		nextAction = {
 			type: "checkNext",

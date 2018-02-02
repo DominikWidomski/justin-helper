@@ -8,19 +8,31 @@ const DateUtil = require("../utils/date");
  * 
  * @param {object} projectTimes
  * @param {object} projects
+ * @param {object} options
+ * @param {string} options.startDate
+ * @param {string} options.endDate
  */
-module.exports = showWeekTable = (projectTimes, projects) => {
+module.exports = showWeekTable = (projectTimes, projects, options) => {
 	const table = new Table({
 	    head: ['Day', 'Date', 'Project', 'Time']
 	});
+
+	options.startDate = new Date(options.startDate);
+	options.endDate = new Date(options.endDate);
 	
 	// Sort chronologically
-	projectTimes.data
+	projectTimes
 		.sort((a, b) => new Date(a.attributes.date) > new Date(b.attributes.date))
-		.forEach(projectTime => {
+		.filter(time => {
+			const date = new Date(time.attributes.date);
+			return date >= options.startDate && date <= options.endDate;
+		})
+		.forEach((projectTime, index, arr) => {
 			const { date, duration_mins, project_id } = projectTime.attributes;
 			const projectName = projects.data.find(project => project.id === project_id).attributes.name;
-			table.push([ DateUtil.getNameOfDay(date), date, projectName, duration_mins / 60 ]);
+			const firstOfProject = index === 0 || arr[index].attributes.date !== arr[index - 1].attributes.date;
+
+			table.push([ firstOfProject ? DateUtil.getNameOfDay(date) : '', date, projectName, duration_mins / 60 ]);
 		});
 
 	console.log(table.toString());
