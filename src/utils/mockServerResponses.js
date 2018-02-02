@@ -19,6 +19,12 @@ module.exports = () => {
                 attributes: {
                     name: 'Fake Project 1'
                 }
+            },
+            {
+                id: 2,
+                attributes: {
+                    name: 'Office Admin'
+                }
             }
         ]
     });
@@ -30,6 +36,30 @@ module.exports = () => {
                 attributes: {
                     project_id: 1,
                     date: '2018-01-01',
+                    duration_mins: '420'
+                }
+            },
+            {
+                id: 2,
+                attributes: {
+                    project_id: 1,
+                    date: '2018-01-02',
+                    duration_mins: '120'
+                }
+            },
+            {
+                id: 3,
+                attributes: {
+                    project_id: 2,
+                    date: '2018-01-02',
+                    duration_mins: '300'
+                }
+            },
+            {
+                id: 4,
+                attributes: {
+                    project_id: 1,
+                    date: '2018-01-03',
                     duration_mins: '420'
                 }
             }
