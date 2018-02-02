@@ -4,6 +4,10 @@ CLI tool for justin, ultimately to be automated and plug into slack.
 
 ## TODO:
 
+- [ ] Testing
+	- [ ] Snapshot output of actions, basically scenarios
+
+
 - [x] split out justin client code
 
 - [x] Get's last week for some reason on continuing with actions.
