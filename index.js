@@ -107,7 +107,8 @@ async function main() {
 			choices: [
 				{ key: 'y', name: "Yes, do the same on next day", value: 'repeat' },
 				{ key: 'n', name: "No, do nothing for now", value: 'nothing' },
-				{ key: 'e', name: "Edit", value: 'edit' }
+				{ key: 'e', name: "Edit", value: 'edit' },
+				{ key: 'd', name: "Delete last time", value: 'delete' }
 			]
 		}]);
 
@@ -153,6 +154,25 @@ async function main() {
 			// @TODO: Could combine this prompt with previous one, with dynamic prompts?
 			// @TODO: Check if time exists, maybe try, and edit if it does
 			await submitNewProjectTime(justin, nextDate, nextActionParams, userData.data.id, projects);
+		} else if (action === 'delete') {
+			const lastTime = projectTimes.sort((a, b) => new Date(a.attributes.date) - new Date(b.attributes.date))[projectTimes.length - 1];
+
+			const projectName = projects.data.find(project => project.id === lastTime.attributes.project_id).attributes.name;
+			const approved = lastTime.attributes.approved_at ? true : false;
+			const message = `Deleting ${lastTime.attributes.duration_mins / 60}h on ${lastTime.attributes.date} for ${projectName} ${approved ? "[APPROVED]" : ""}`;
+			
+			const result = await inquirer.prompt([{
+				type: "confirm",
+				name: "continue",
+				// if found times, stay in this week, otherwise move further back
+				default: !approved,
+				message
+			}]);
+
+			if (result.continue) {
+				await justin.deleteProjectTime(lastTime.id);
+				projectTimes = projectTimes.filter(a => a.id !== lastTime.id);
+			}
 		}
 
 		// Refreshing projectTimes for current week
