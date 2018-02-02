@@ -119,7 +119,17 @@ module.exports = class JustinClient {
 		res = this._handleProjectTimesPostResponse(res);
 
 		// @TODO: Uniform solution for html or JSON?
-		return await res.json();
+		try {
+			return await res.json();
+		} catch (e) {
+			// TODO: Handle that JSON parsing error properly, better way?
+			// for now letting through FetchError to do with JSON formatting
+			if (e.type === "invalid-json") {
+				return res.ok;
+			}
+
+			throw e;
+		}
 	}
 
 	async getUser(userId) {
