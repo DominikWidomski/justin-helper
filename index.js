@@ -26,6 +26,9 @@ const justin = new JustinClient({
 	appToken: process.env.APP_TOKEN
 });
 
+const fullDayHours = 7;
+const fullDayMinutes = 60 * fullDayHours;
+
 async function main() {
 	await justin.authenticate(process.env.email, process.env.password);
 	const userData = await justin.getUser(justin.tokenData['user_id']);
@@ -107,6 +110,12 @@ async function main() {
 			.filter(projectTime => projectTime.attributes.duration_mins > 0)[0];
 	}
 
+	const totalTimeForDate = (projectTimes, date) => {
+		return projectTimes.filter((time, index, array) => {
+			return time.attributes.date === DateUtil.getDateTime(date)
+		}).reduce((total, time) => total + parseInt(time.attributes.duration_mins), 0)
+	}
+
 	// ask if you'd like to repeat it
 	/**
 	 * Inquire user's next input based on last input
@@ -115,19 +124,27 @@ async function main() {
 	 *
 	 * @return {object}
 	 */
-	const queryNextAction = async (lastInput) => {
+	const queryNextAction = async (lastInput, projectTimes) => {
+		const isFullDay = totalTimeForDate(projectTimes, lastInput.attributes.date) >= fullDayMinutes;
 		const { date, duration_mins, project_id } = lastInput.attributes;
 		const projectName = projects.data.find(project => project.id === project_id).attributes.name;
+
+		const choices = [
+			{ key: 'r', name: "Repeat, do the same on next day", value: 'repeat' },
+			{ key: 'n', name: "Nothing", value: 'nothing' },
+			{ key: 'e', name: "Edit before submitting next day", value: 'edit' },
+			{ key: 'd', name: "Delete last time", value: 'delete' }
+		];
+
+		if (!isFullDay) {
+			choices.push({ key: 'c', name: 'Continue day', value: 'continue' });
+		}
+		
 		const query = await inquirer.prompt([{
-			message: `Most recent: ${[ DateUtil.getNameOfDay(date), date, projectName, duration_mins / 60 + 'h' ].join(', ')}. Repeat?`,
+			message: `Most recent: ${[ DateUtil.getNameOfDay(date), date, projectName, duration_mins / 60 + 'h' ].join(', ')}. What do?`,
 			type: "expand",
 			name: "nextAction",
-			choices: [
-				{ key: 'y', name: "Yes, do the same on next day", value: 'repeat' },
-				{ key: 'n', name: "No, do nothing for now", value: 'nothing' },
-				{ key: 'e', name: "Edit", value: 'edit' },
-				{ key: 'd', name: "Delete last time", value: 'delete' }
-			]
+			choices
 		}]);
 
 		return query.nextAction;
@@ -153,12 +170,13 @@ async function main() {
 
 		const lastDate = lastInput.attributes.date;
 		let nextDate = DateUtil.addDaysToDate(lastDate, 1);
+		let actedDate = nextDate;
 
 		while (DateUtil.getDateObject(nextDate).isWeekend) {
 			nextDate = DateUtil.addDaysToDate(nextDate, 1);
 		}
 
-		const action = await queryNextAction(lastInput);
+		const action = await queryNextAction(lastInput, projectTimes);
 		// POST for new Project time
 		// @TODO: Unify with the { type: string } type
 		if (action === 'repeat') {
@@ -179,6 +197,17 @@ async function main() {
 			if (newProjectTime) {
 				projectTimes = resolveOrderedProjectTimes(projectTimes, [newProjectTime]);
 			}
+		} else if (action === 'continue') {
+			const totalTime = totalTimeForDate(projectTimes, lastInput.attributes.date);
+			const nextActionParams = await getNextActionParams(lastInput, projects, {
+				maxMinutes: fullDayMinutes - totalTime
+			});
+
+			const newProjectTime = await submitNewProjectTime(justin, lastDate, nextActionParams, userData.data.id, projects);
+			if (newProjectTime) {
+				projectTimes = resolveOrderedProjectTimes(projectTimes, [newProjectTime]);
+			}
+			actedDate = lastDate;
 		} else if (action === 'delete') {
 			const lastTime = projectTimes.sort((a, b) => new Date(a.attributes.date) - new Date(b.attributes.date))[projectTimes.length - 1];
 
@@ -198,11 +227,13 @@ async function main() {
 				await justin.deleteProjectTime(lastTime.id);
 				projectTimes = projectTimes.filter(a => a.id !== lastTime.id);
 			}
+
+			actedDate = DateUtil.getDateObject(lastTime.attributes.date);
 		}
 
 		// Refreshing projectTimes for current week
 		// @TODO: get next week if we've moved on further
-		nextDate = DateUtil.addDaysToDate(nextDate, 1);
+		nextDate = DateUtil.addDaysToDate(actedDate, 1);
 		const isCurrentWeek = nextDate >= new Date(weekBeginning) && nextDate <= new Date(weekEnding);
 		if (!isCurrentWeek) {
 			weekBeginning = DateUtil.getStartOfWeek(nextDate);

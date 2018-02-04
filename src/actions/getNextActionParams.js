@@ -8,7 +8,20 @@ const composeName = (project, lastInput) => {
 	return `${attributes.name} ${isEnded ? '[ended]' : '' }`;
 }
 
-module.exports = getNextActionParams = async (lastInput, projects) => {
+module.exports = getNextActionParams = async (lastInput, projects, options = {}) => {
+	function makeChoices() {
+		const choices = [];
+
+		for	(let i = 1; i <= 7; ++i) {
+			const mins = 60 * i;
+			if (!options.maxMinutes || mins <= options.maxMinutes) {
+				choices.push({ name: `${i}h`, value: ""+mins });
+			}
+		}
+
+		return choices;
+	}
+	
 	return await inquirer.prompt([
 		{
 			message: "Select a project",
@@ -36,15 +49,7 @@ module.exports = getNextActionParams = async (lastInput, projects) => {
 			type: "list",
 			name: "duration_mins",
 			default: lastInput.attributes.duration_mins + "",
-			choices: [
-				{ name: "1h", value: "60" },
-				{ name: "2h", value: "120" },
-				{ name: "3h", value: "180" },
-				{ name: "4h", value: "240" },
-				{ name: "5h", value: "300" },
-				{ name: "6h", value: "360" },
-				{ name: "7h", value: "420" }
-			]
+			choices: makeChoices()
 		}
 	]);
 };
