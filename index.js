@@ -41,8 +41,7 @@ async function main() {
 	// GET project-times to check 
 	// https://api.dev.justinapp.io/v1/project-times?filter%5Buser_id%5D=29e5bf60-f1c9-402b-a366-52afacc6765a&filter%5Bdate%3Astart%5D=2017-12-25&filter%5Bdate%3Aend%5D=2017-12-30&include=rejections
 
-	const today = new Date();
-	let weekBeginning = DateUtil.getDateTime(DateUtil.getStartOfWeek(today));
+	let weekBeginning = DateUtil.getDateTime(DateUtil.getStartOfWeek(new Date()));
 	let weekEnding = DateUtil.getDateTime(DateUtil.addDaysToDate(weekBeginning, 6));
 	let lookEarlier = true;
 	// @TODO: Store all retrieved projectTimes in a cache, handle only a week at a time
@@ -64,7 +63,7 @@ async function main() {
 	 * 
 	 * @returns {Array}
 	 */
-	function resolveOrderedProjectTimes(oldCollection, newCollection) {
+	function resolveOrderedProjectTimes(oldCollection = [], newCollection = []) {
 		const seen = {};
 		
 		const data = [...oldCollection, ...newCollection]
@@ -176,7 +175,10 @@ async function main() {
 			// @TODO: If reply No, should try to get params again?
 			// @TODO: Could combine this prompt with previous one, with dynamic prompts?
 			// @TODO: Check if time exists, maybe try, and edit if it does
-			await submitNewProjectTime(justin, nextDate, nextActionParams, userData.data.id, projects);
+			const newProjectTime = await submitNewProjectTime(justin, nextDate, nextActionParams, userData.data.id, projects);
+			if (newProjectTime) {
+				projectTimes = resolveOrderedProjectTimes(projectTimes, [newProjectTime]);
+			}
 		} else if (action === 'delete') {
 			const lastTime = projectTimes.sort((a, b) => new Date(a.attributes.date) - new Date(b.attributes.date))[projectTimes.length - 1];
 

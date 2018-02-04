@@ -55,6 +55,7 @@ module.exports = async function submitNewProjectTime(justin, date, attributes, u
 			const res = await justin.post("/project-times", data);
 
 			showSuccessfulSubmissionResponse(res, projects);
+			return res.data;
 		} catch(e) {
 			console.log(e);
 		}
