@@ -12,7 +12,7 @@ const DateUtil = require("../utils/date");
  * @param {string} options.startDate
  * @param {string} options.endDate
  */
-module.exports = showWeekTable = (projectTimes, projects, options) => {
+const showWeekTable = (projectTimes, projects, options) => {
 	const table = new Table({
 	    head: ['Day', 'Date', 'Project', 'Time']
 	});
@@ -37,3 +37,5 @@ module.exports = showWeekTable = (projectTimes, projects, options) => {
 
 	console.log(table.toString());
 };
+
+export default showWeekTable;

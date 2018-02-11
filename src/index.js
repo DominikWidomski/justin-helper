@@ -5,14 +5,14 @@ require('dotenv').config()
 const inquirer = require('inquirer');
 const chalk = require('chalk');
 const fuzzy = require('fuzzy');
-const DateUtil = require("./src/utils/date");
+const DateUtil = require("./utils/date");
 
-const JustinClient = require("./src/justin/JustinClient");
-const submitNewProjectTime = require('./src/actions/submitNewProjectTime');
-const showWeekTable = require('./src/actions/showWeekTable');
-const getNextActionParams = require('./src/actions/getNextActionParams');
+const JustinClient = require("./justin/JustinClient");
+const submitNewProjectTime = require('./actions/submitNewProjectTime');
+const showWeekTable = require('./actions/showWeekTable');
+const getNextActionParams = require('./actions/getNextActionParams');
 
-import type { ProjectTime } from "./src/types.js";
+import type { ProjectTime } from "./types.js";
 
 inquirer.registerPrompt('autocomplete', require('inquirer-autocomplete-prompt'));
 
@@ -230,6 +230,20 @@ async function main() {
 
 			actedDate = DateUtil.getDateObject(lastTime.attributes.date);
 		}
+
+		// TODO: CHECK IF DAY IS COMPLETE
+		// ASK IF WANTS TO MOVE TO NEXT DAY
+
+		// const totalCurrentDateTime = totalTimeForDate(projectTimes, nextDate);
+
+		// if (totalCurrentDateTime < fullDayMinutes) {
+		// 	console.log(`${(fullDayMinutes - totalCurrentDateTime) / 60}h left in the day.`);
+		// 	// const answer = await inquirer.prompt([{
+		// 	// 	message: `${(fullDayMinutes - totalCurrentDateTime) / 60}h left in the day.`,
+		// 	// 	type: "confirm",
+		// 	// 	name: "addMore",
+		// 	// }]);
+		// }
 
 		// Refreshing projectTimes for current week
 		// @TODO: get next week if we've moved on further

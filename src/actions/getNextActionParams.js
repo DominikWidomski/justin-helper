@@ -8,7 +8,7 @@ const composeName = (project, lastInput) => {
 	return `${attributes.name} ${isEnded ? '[ended]' : '' }`;
 }
 
-module.exports = getNextActionParams = async (lastInput, projects, options = {}) => {
+const getNextActionParams = async (lastInput, projects, options = {}) => {
 	function makeChoices() {
 		const choices = [];
 
@@ -53,3 +53,5 @@ module.exports = getNextActionParams = async (lastInput, projects, options = {})
 		}
 	]);
 };
+
+export default getNextActionParams;
