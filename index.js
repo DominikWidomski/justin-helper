@@ -1,3 +1,5 @@
+/* @flow */
+
 require('dotenv').config()
 
 const inquirer = require('inquirer');
@@ -9,6 +11,8 @@ const JustinClient = require("./src/justin/JustinClient");
 const submitNewProjectTime = require('./src/actions/submitNewProjectTime');
 const showWeekTable = require('./src/actions/showWeekTable');
 const getNextActionParams = require('./src/actions/getNextActionParams');
+
+import type { ProjectTime } from "./src/types.js";
 
 inquirer.registerPrompt('autocomplete', require('inquirer-autocomplete-prompt'));
 
@@ -50,7 +54,7 @@ async function main() {
 	// @TODO: Store all retrieved projectTimes in a cache, handle only a week at a time
 	let projectTimes = [];
 
-	const getProjectTimes = (userId, weekBeginning, weekEnding) => {
+	const getProjectTimes = (userId: string, weekBeginning: string, weekEnding: string) => {
 		return justin.getProjectTimes({
 			user_id: userData.data.id,
 			'date:start': weekBeginning,
@@ -99,14 +103,10 @@ async function main() {
 
 	/**
 	 * Retrieves the last chronologically projectTime with non-zero time entry
-	 *
-	 * @param {object} projectTimes
-	 *
-	 * @return {object}
 	 */
-	const getLastProjectTime = (projectTimes) => {
+	const getLastProjectTime = (projectTimes: Array<ProjectTime>): ProjectTime => {
 		return projectTimes
-			.sort((a, b) => new Date(a.attributes.date) < new Date(b.attributes.date))
+			.sort((a, b) => new Date(b.attributes.date) - new Date(a.attributes.date))
 			.filter(projectTime => projectTime.attributes.duration_mins > 0)[0];
 	}
 
