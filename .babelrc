@@ -1,5 +1,6 @@
 {
-    "sourceMaps": true,
-    "presets": ["es2015", "stage-1"],
-    "plugins": ["transform-runtime", "add-module-exports", "transform-flow-strip-types"]
+    "sourceMaps": "inline",
+    "comments": false,
+    "presets": ["stage-1"],
+    "plugins": ["transform-runtime", "add-module-exports", "transform-flow-strip-types", "transform-es2015-modules-commonjs"]
 }

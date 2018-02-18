@@ -2,6 +2,8 @@
 
 require('dotenv').config()
 
+console.log("I AM IN: ", __dirname);
+
 const inquirer = require('inquirer');
 const chalk = require('chalk');
 const fuzzy = require('fuzzy');

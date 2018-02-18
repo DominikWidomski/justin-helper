@@ -5,8 +5,154 @@
                 "type": "node",
                 "request": "launch",
                 "console": "integratedTerminal",
-                "name": "Launch Program",
-                "program": "${workspaceRoot}/index.js"
-            }
+                "name": "Launch Taskr",
+                "program": "${workspaceRoot}/node_modules/.bin/taskr"
+            },
+
+            {
+                "type": "node",
+                "request": "launch",
+                "console": "integratedTerminal",
+                "name": "Launch DEV",
+                "program": "${workspaceRoot}/build/index",
+                "sourceMaps": true,
+                "outFiles": [
+                    "${workspaceRoot}/build/**/*"
+                ],
+                // have a feeling like this has to be in babel config because it could break too easily otherwise
+                "sourceMapPathOverrides": {
+                    "*": "${workspaceRoot}/src/*",
+                },
+                // "smartStep": true
+            },
+
+            {
+                "type": "node",
+                "request": "launch",
+                "console": "integratedTerminal",
+                "name": "Launch TEST",
+                "program": "${workspaceRoot}/build/test",
+                "sourceMaps": true,
+                "outFiles": [
+                    "${workspaceRoot}/build/*"
+                ],
+                "sourceMapPathOverrides": {
+                    "*": "${workspaceRoot}/src/*",
+                }
+                // "cwd": "${workspaceRoot}",
+                // "env": {
+                //     "NODE_ENV": "development",
+                // }
+            },
+            // {
+            //     "type": "node",
+            //     "request": "launch",
+            //     "console": "integratedTerminal",
+            //     "name": "Launch Dev",
+            //     "program": "${workspaceRoot}/build/index",
+            //     // "trace": true,
+            //     // "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/babel-node",
+            //     // "runtimeArgs": [
+            //         // "--presets",
+            //         // "env"
+            //     //     "justin",
+            //     //     "--inspect-brk",
+            //     //     // "-r", "babel-register"
+            //     // ],
+            //     // "protocol": "inspector",
+            //     "sourceMaps": true,
+            //     // "stopOnEntry": false,
+            //     "outFiles": [
+            //         "${workspaceRoot}/build/*"
+            //     ],
+            //     // "remoteRoot": null,
+            //     // "localRoot": "${workspaceRoot}",
+            //     "cwd": "${workspaceRoot}",
+            //     "env": {
+            //         "NODE_ENV": "development",
+            //         // "NODE_PATH": "${workspaceRoot}/.compiled/src"
+            //     }
+            // },
+            // {
+            //     "type": "node",
+            //     "request": "launch",
+            //     "console": "integratedTerminal",
+            //     "name": "Launch Program",
+            //     // "program": "${workspaceRoot}/build/src/index.js",
+            //     // "trace": true,
+            //     "program": "${workspaceRoot}/build/src/index.js",
+            //     "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/babel-node",
+            //     "runtimeArgs": [
+            //         // "--presets",
+            //         // "env"
+            //     //     "justin",
+            //     //     "--inspect-brk",
+            //     //     // "-r", "babel-register"
+            //     ],
+            //     // "protocol": "inspector",
+            //     "sourceMaps": true,
+            //     // "stopOnEntry": false,
+            //     "outFiles": [
+            //         "${workspaceRoot}/build/src/*"
+            //     ],
+            //     // "remoteRoot": null,
+            //     // "localRoot": "${workspaceRoot}",
+            //     // "cwd": "${workspaceRoot}",
+            //     // "env": {
+            //         // "NODE_ENV": "development",
+            //         // "NODE_PATH": "${workspaceRoot}/.compiled/src"
+            //     // }
+            // },
+            // {
+            //     "name": "New Launch",
+            //     "type": "node",
+            //     "request": "launch",
+            //     "program": "${workspaceRoot}/src/index.js",
+            //     "stopOnEntry": false,
+            //     "args": [],
+            //     "cwd": "${workspaceRoot}/build",
+            //     // "preLaunchTask": "build",
+            //     "runtimeExecutable": null,
+            //     "runtimeArgs": [ "--nolazy" ],
+            //     "env": {
+            //         "NODE_ENV": "development"
+            //     },
+            //     "console": "integratedTerminal",
+            //     "localRoot": "${workspaceRoot}/src",
+            //     "remoteRoot": "${workspaceRoot}/build",
+            //     "sourceMaps": true,
+            //     "outFiles": [ "${workspaceRoot}/build" ]
+            // },
+            // {
+            //     "name": "New Launch 2",
+            //     "type": "node",
+            //     "request": "launch",
+            //     "program": "${workspaceRoot}/src/index.js",
+            //     "stopOnEntry": false,
+            //     "args": [],
+            //     "cwd": "${workspaceRoot}",
+            //     "preLaunchTask": null,
+            //     "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/babel-node",
+            //     "runtimeArgs": [
+            //         "--nolazy"
+            //     ],
+            //     "env": {
+            //         "NODE_ENV": "development"
+            //     },
+            //     "console": "integratedTerminal",
+            //     "sourceMaps": false,
+            //     "outFiles": null
+            // },
+            // {
+            //     "name": "Attach to Process",
+            //     "type": "node",
+            //     "protocol": "inspector",
+            //     "request": "attach",
+            //     "stopOnEntry": false,
+            //     "port": 5858,
+            //     "localRoot": "${workspaceRoot}/src",
+            //     "remoteRoot": "${workspaceRoot}/build",
+            //     "sourceMaps": true
+            // }
         ]
     }

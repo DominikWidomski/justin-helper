@@ -8,3 +8,8 @@ export type ProjectTime = {
         duration_mins: number
     }
 };
+
+
+export type Request<T> = {
+    // todo
+};

@@ -12,10 +12,22 @@ CLI tool for justin, ultimately to be automated and plug into slack.
 
 - [x] Get's last week for some reason on continuing with actions.
 - [ ] Submitting several things for one day (don't continue untill day === 7h?)
+- [ ] Repeat should now take into account the entire day, across projects
+- [ ] Need to make it easy to edit that somehow.
 
-main thing runs actions
-which are async
-which return prompt answers or something to decide on next
+- [ ] Make the Request<T> generic type probably? Would be neat
+- [ ] fucking debugging
+	https://gist.github.com/dchowitz/83bdd807b5fa016775f98065b381ca4e
+	https://github.com/Microsoft/vscode/issues/13405
+	https://github.com/Microsoft/vscode/issues/23900
+	
+
+Approach:
+- main thing runs actions
+- which are async
+- which return prompt answers or something to decide on next
+
+restructure to choose actions based on and be in context of a single ProjectTime.
 
 when we hit "today" or whatever condition for not looping is any more, show the menu.
 

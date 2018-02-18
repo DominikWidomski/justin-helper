@@ -23,7 +23,7 @@ function showSuccessfulSubmissionResponse(res, projects) {
  * @param {string} userId
  * @param {object} projects
  */
-module.exports = async function submitNewProjectTime(justin, date, attributes, userId, projects) {
+export default async function submitNewProjectTime(justin, date, attributes, userId, projects) {
 	const projectName = projects.data.find(project => project.id === attributes.project_id).attributes.name;
 	date = DateUtil.getDateTime(date);
 
