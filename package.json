@@ -4,9 +4,10 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "dev": "taskr",
     "clear": "taskr clear",
-    "flow": "flow"
+    "flow": "flow",
+    "build": "./node_modules/.bin/babel src -d build -s",
+    "dev": "./node_modules/.bin/onchange src/* -- npm run build"
   },
   "engines": {
     "node": ">=8"
@@ -35,6 +36,7 @@
     "babel-preset-es2017": "^6.24.1",
     "babel-preset-stage-1": "^6.24.1",
     "flow-bin": "^0.65.0",
+    "onchange": "^3.3.0",
     "taskr": "^1.1.0"
   }
 }

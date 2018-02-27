@@ -1,6 +1,9 @@
 {
-    "sourceMaps": "inline",
+    "sourceMaps": true,
+    // "sourceRoot": "./src",
     "comments": false,
     "presets": ["stage-1"],
-    "plugins": ["transform-runtime", "add-module-exports", "transform-flow-strip-types", "transform-es2015-modules-commonjs"]
+    "plugins": ["transform-runtime", "add-module-exports", "transform-flow-strip-types", "transform-es2015-modules-commonjs"],
+    // "sourceMapTarget": "filename"
+    // "filenameRelative": "filename"
 }

@@ -20,9 +20,14 @@
                     "${workspaceRoot}/build/**/*"
                 ],
                 // have a feeling like this has to be in babel config because it could break too easily otherwise
-                "sourceMapPathOverrides": {
-                    "*": "${workspaceRoot}/src/*",
-                },
+                // "sourceMapPathOverrides": {
+                //     "*": "${workspaceRoot}/src/*",
+                // },
+                // "sourceMapPathOverrides": {
+                //     "webpack:///./~/*": "${workspaceRoot}/node_modules/*",
+                //     "webpack:///./*": "${workspaceRoot}/*",
+                //     "webpack:///*": "*"
+                // }
                 // "smartStep": true
             },
 
