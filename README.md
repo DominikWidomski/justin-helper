@@ -6,9 +6,19 @@ CLI tool for justin, ultimately to be automated and plug into slack.
 
 - [ ] Testing
 	- [ ] Snapshot output of actions, basically scenarios
-
+- [ ] How can I test the console output?
+	- I'd like to be able to perform the actions etc, see their output if there is any
+	- Snapshot output to user, as well as changes to state.
+	- Snapshots of output to user: would I need some abstraction to putputting to console? i.e. `outputBuffer`? There is something like that in the readline API I think.
 
 - [x] split out justin client code
+
+- [ ] Bug: table not displaying when deleting ProjectTime
+- [ ] Bug: 'repeat' action into the future triggers a message telling you there's no more to submit, but not if 'edit' first
+
+- [ ] Flow typing
+	- Should it be using typescript types?
+	- It automatically imports or looks up typescript types are those the correct ones to use?
 
 - [x] Get's last week for some reason on continuing with actions.
 - [ ] Submitting several things for one day (don't continue untill day === 7h?)
@@ -20,6 +30,7 @@ CLI tool for justin, ultimately to be automated and plug into slack.
 	https://gist.github.com/dchowitz/83bdd807b5fa016775f98065b381ca4e
 	https://github.com/Microsoft/vscode/issues/13405
 	https://github.com/Microsoft/vscode/issues/23900
+	- [ ] Less obvious than expected. Submit an issue on @taskr/babel to check if I'm using it right or if there is actually a bug. Can then fix attempt to fix it.
 	
 
 Approach:

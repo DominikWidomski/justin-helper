@@ -9,7 +9,14 @@ export type ProjectTime = {
     }
 };
 
-
-export type Request<T> = {
-    // todo
+export type JustinResponse<T> = {
+    data: T,
+    links: {
+        self: string,
+        first: string,
+        // last?: string // ???
+    },
+    meta: {
+        total: number
+    }
 };

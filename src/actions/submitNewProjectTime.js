@@ -54,8 +54,10 @@ export default async function submitNewProjectTime(justin, date, attributes, use
 		try {
 			const res = await justin.post("/project-times", data);
 
-			showSuccessfulSubmissionResponse(res, projects);
-			return res.data;
+			if (!res.errors) {
+				showSuccessfulSubmissionResponse(res, projects);
+				return res.data;
+			}
 		} catch(e) {
 			console.log(e);
 		}

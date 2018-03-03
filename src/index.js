@@ -36,7 +36,7 @@ const fullDayHours = 7;
 const fullDayMinutes = 60 * fullDayHours;
 
 async function main() {
-	await justin.authenticate(process.env.email, process.env.password);
+	await justin.authenticate(process.env.email || '', process.env.password || '');
 	const userData = await justin.getUser(justin.tokenData['user_id']);
 
 	const answers = await inquirer.prompt([{
