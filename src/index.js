@@ -9,12 +9,13 @@ const chalk = require('chalk');
 const fuzzy = require('fuzzy');
 const DateUtil = require("./utils/date");
 
-const JustinClient = require("./justin/JustinClient");
-const submitNewProjectTime = require('./actions/submitNewProjectTime');
-const showWeekTable = require('./actions/showWeekTable');
-const getNextActionParams = require('./actions/getNextActionParams');
+import JustinClient from "./justin/JustinClient";
+// TODO: Can use `import` here instead of `.default`
+import submitNewProjectTime from './actions/submitNewProjectTime';
+import showWeekTable from './actions/showWeekTable';
+import getNextActionParams from './actions/getNextActionParams';
 
-import type { ProjectTime } from "./types.js";
+import type { JustinResponse, Project, ProjectTime } from "./types.js";
 
 inquirer.registerPrompt('autocomplete', require('inquirer-autocomplete-prompt'));
 
@@ -45,7 +46,11 @@ async function main() {
 		name: "confirmIdentity",
 	}]);
 	
-	const projects = await justin.getProjects();
+	// Without explicitly typing this `const` I get:
+	// 	Promise (This type is incompatible with the expected param type of union: `Promise` | `T`
+	// 	Member 1: Promise Error: property `attributes` Property cannot be accessed on possibly undefined value
+	// 	Member 2: T Error: property `data` Property not found in Promise)
+	const projects: JustinResponse<Project[]> = await justin.getProjects();
 
 	// GET project-times to check 
 	// https://api.dev.justinapp.io/v1/project-times?filter%5Buser_id%5D=29e5bf60-f1c9-402b-a366-52afacc6765a&filter%5Bdate%3Astart%5D=2017-12-25&filter%5Bdate%3Aend%5D=2017-12-30&include=rejections
@@ -66,13 +71,8 @@ async function main() {
 
 	/**
 	 * Groups two arrays of ProjectTime query response data and sorts them by date
-	 * 
-	 * @param {Array} oldCollection 
-	 * @param {Array} newCollection
-	 * 
-	 * @returns {Array}
 	 */
-	function resolveOrderedProjectTimes(oldCollection = [], newCollection = []) {
+	function resolveOrderedProjectTimes(oldCollection = [], newCollection = []): ProjectTime[] {
 		const seen = {};
 		
 		const data = [...oldCollection, ...newCollection]
@@ -129,7 +129,8 @@ async function main() {
 	const queryNextAction = async (lastInput, projectTimes) => {
 		const isFullDay = totalTimeForDate(projectTimes, lastInput.attributes.date) >= fullDayMinutes;
 		const { date, duration_mins, project_id } = lastInput.attributes;
-		const projectName = projects.data.find(project => project.id === project_id).attributes.name;
+		const project = projects.data.find(project => project.id === project_id);
+		const projectName = project && project.attributes.name;
 
 		const choices = [
 			{ key: 'r', name: "Repeat, do the same on next day", value: 'repeat' },
@@ -211,9 +212,14 @@ async function main() {
 			}
 			actedDate = lastDate;
 		} else if (action === 'delete') {
+			// https://github.com/Microsoft/vscode/issues/5214
+			// https://github.com/facebook/flow/issues/1853
+			// ->>> LEFT HERE
 			const lastTime = projectTimes.sort((a, b) => new Date(a.attributes.date) - new Date(b.attributes.date))[projectTimes.length - 1];
 
-			const projectName = projects.data.find(project => project.id === lastTime.attributes.project_id).attributes.name;
+			// TODO: this is duplicated several times also in other files, could be a util or something
+			const project = projects.data.find(project => project.id === lastTime.attributes.project_id)
+			const projectName = project ? project.attributes.name : '';
 			const approved = lastTime.attributes.approved_at ? true : false;
 			const message = `Deleting ${lastTime.attributes.duration_mins / 60}h on ${lastTime.attributes.date} for ${projectName} ${approved ? "[APPROVED]" : ""}`;
 			

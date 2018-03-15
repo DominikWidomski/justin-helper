@@ -1,3 +1,7 @@
+/* @flow */
+
+import { type Project, type ProjectTime, type JustinResponse } from "../types";
+
 const inquirer = require('inquirer');
 const fuzzy = require('fuzzy');
 
@@ -8,7 +12,11 @@ const composeName = (project, lastInput) => {
 	return `${attributes.name} ${isEnded ? '[ended]' : '' }`;
 }
 
-const getNextActionParams = async (lastInput, projects, options = {}) => {
+type Options = {
+	maxMinutes?: number 
+};
+
+const getNextActionParams = async (lastInput: ProjectTime, projects: JustinResponse<Project[]>, options: Options = {}) => {
 	function makeChoices() {
 		const choices = [];
 

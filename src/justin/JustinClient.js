@@ -12,11 +12,12 @@ const DateUtil = require("../utils/date");
 const fs = require('../utils/fileSystem');
 
 import {
+	type Project,
 	type ProjectTime,
 	type JustinResponse
 } from "../types";
 
-// const fetch = require("../utils/mockServerResponses")();
+const fetch = require("../utils/mockServerResponses")();
 
 // const serverTokenEndpoint = basePath + authPath;
 // const serverTokenRefreshEndpoint = serverTokenEndpoint + '/refresh-token';
@@ -72,6 +73,14 @@ function writeResponseToFile(content, url: string, method: string) {
 		});
 	}
 }
+
+type Response = {
+	errors: {
+		title: any,
+		detail: any,
+		source: any
+	}[]
+};
 
 module.exports = class JustinClient {
 	config: JustinClientConfig;
@@ -141,7 +150,7 @@ module.exports = class JustinClient {
 
 	// @TODO: Still work to do this properly
 	// @TODO: res type to be of JustinResponse or JustinErrorResponse or something like that
-	async _handleProjectTimesPostResponse(res: { errors: { title: any, detail: any, source: any}[] } | any) {
+	async _handleProjectTimesPostResponse(res: Response) {
 		if (res.errors) {
 			const {
 				title,
@@ -203,7 +212,14 @@ module.exports = class JustinClient {
 			// TODO: Handle that JSON parsing error properly, better way?
 			// for now letting through FetchError to do with JSON formatting
 			if (e.type === "invalid-json") {
-				return res.ok;
+				return {
+					errors: [
+						{
+							message: 'Invalid JSON',
+							response: res
+						}
+					]
+				};
 			}
 
 			throw e;
@@ -214,8 +230,8 @@ module.exports = class JustinClient {
 		return await this.get('/users/' + userId);
 	}
 
-	async getProjects() {
-		return await this.get('/projects');
+	async getProjects(): Promise<JustinResponse<Project[]>> {
+		return this.get('/projects');
 	}
 
 	// TODO: any way of doing this? JustinResponse<ProjectTime[]>

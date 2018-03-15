@@ -1,6 +1,10 @@
+/* @flow */
+
 const inquirer = require('inquirer');
 
 const DateUtil = require('../utils/date');
+
+import type JustinClient from '../justin/JustinClient';
 
 function showSuccessfulSubmissionResponse(res, projects) {
 	const {
@@ -16,14 +20,14 @@ function showSuccessfulSubmissionResponse(res, projects) {
  * Submits a new projectTime to Justin, handles prompt to confirm.
  *
  * @TODO: Refactor this API... jeeeez
- *
- * @param {JustinCLient} justin
- * @param {string} date
- * @param {object} attributes
- * @param {string} userId
- * @param {object} projects
  */
-export default async function submitNewProjectTime(justin, date, attributes, userId, projects) {
+export default async function submitNewProjectTime(
+	justin: JustinClient,
+	date: string,
+	attributes: Object,
+	userId: string,
+	projects: Object
+) {
 	const projectName = projects.data.find(project => project.id === attributes.project_id).attributes.name;
 	date = DateUtil.getDateTime(date);
 

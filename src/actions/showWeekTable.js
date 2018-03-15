@@ -1,18 +1,22 @@
+/* @flow */
+
 const Table = require('cli-table2');
 const DateUtil = require("../utils/date");
+
+import type { ProjectTime } from "../types.js";
+
+type showWeekTableOptionsType = {
+	startDate: string | Date,
+	endDate: string | Date
+};
 
 /**
  * Renders a table describing an array of projectTime objects
  *
  * @TODO: Render several projects for the day (don't show day name multiple times)
- * 
- * @param {object} projectTimes
- * @param {object} projects
- * @param {object} options
- * @param {string} options.startDate
- * @param {string} options.endDate
+ * @TODO: Fix projectTimes type to be more accurate and specific
  */
-const showWeekTable = (projectTimes, projects, options) => {
+const showWeekTable = (projectTimes: any, projects: Object, options: showWeekTableOptionsType) => {
 	const table = new Table({
 	    head: ['Day', 'Date', 'Project', 'Time']
 	});
