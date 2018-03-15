@@ -4,6 +4,11 @@ CLI tool for justin, ultimately to be automated and plug into slack.
 
 ## TODO:
 
+- [ ] Sourcemaps links:
+	- https://github.com/danvk/source-map-explorer
+	- google for "babel sourcemaps only have one source"
+	- https://github.com/babel/gulp-babel/issues/54
+
 - [ ] Testing
 	- [ ] Snapshot output of actions, basically scenarios
 - [ ] How can I test the console output?
