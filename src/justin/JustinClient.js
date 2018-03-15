@@ -3,12 +3,13 @@
 // import type { RequestOptions } from 'https';
 
 require('isomorphic-fetch');
-const fs = require('fs');
+// const fs = require('fs');
 const path = require('path');
 const atob = require('atob');
 const chalk = require('chalk');
 
 const DateUtil = require("../utils/date");
+const fs = require('../utils/fileSystem');
 
 import {
 	type ProjectTime,
@@ -51,6 +52,26 @@ type ProjectTimesFilters = {
 // 	basePath: '',
 // 	serverTokenEndpoint: ''
 // };
+
+// some inspiration of a similar package:
+// https://github.com/mpj/junction-example/blob/master/src/junction-file-cache.js
+// Some use cases - whole LBX / AP client mocking this stuff.
+// but also the alphapoint-playground, toggle whether you want to mock responses
+// some UI showing that it's mocked, then busting that cache, I guess the package would need to signal status a bit to allow someone to build that.
+function writeResponseToFile(content, url: string, method: string) {
+	const filename = "." + url + "." + method;
+	const responseFilepath = path.resolve(__dirname, "./responses/", filename);
+
+	if (!fs.existsSync(responseFilepath)) {
+		fs.writeFile(responseFilepath, JSON.stringify(content, null, 4), { mode: 0o666, flag: 'wx' }, function (err) {
+			if (err) {
+				console.log(err);
+			} else {
+				console.log("It's saved!");
+			}
+		});
+	}
+}
 
 module.exports = class JustinClient {
 	config: JustinClientConfig;
@@ -135,9 +156,9 @@ module.exports = class JustinClient {
 		return res;
 	}
 
-	async get(path: string) {
+	async get(url: string): Promise<any> {
 		// @TODO: Another flow null "workaround"
-		let res = await fetch((this.config.basePath || '') + path, {
+		let res = await fetch((this.config.basePath || '') + url, {
 			method: 'GET',
 			headers: {
 				'Authorization': 'Bearer ' + this.token, 
@@ -145,12 +166,14 @@ module.exports = class JustinClient {
 			}, 
 		});
 
-		// res = this._handleProjectTimesPostResponse(res);
+		const body = await res.json()
 
-		return await res.json();
+		writeResponseToFile(body, url, "GET");
+		
+		return await body;
 	}
 
-	async post(path: string, data: Object, method?: string = "POST") {
+	async post(url: string, data: Object, method?: string = "POST") {
 		const params: RequestOptions = {
 			method,
 			headers: {
@@ -164,7 +187,7 @@ module.exports = class JustinClient {
 		}
 
 		// @TODO: Another flow null "workaround"
-		const requestUrl = (this.config.basePath || '') + path;
+		const requestUrl = (this.config.basePath || '') + url;
 
 		let res = await fetch(requestUrl, params);
 
@@ -172,6 +195,8 @@ module.exports = class JustinClient {
 		try {
 			let responseBody = await res.json();
 			responseBody = this._handleProjectTimesPostResponse(responseBody);
+			
+			writeResponseToFile(responseBody, url, "POST");
 			
 			return responseBody;
 		} catch (e) {
