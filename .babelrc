@@ -1,5 +1,9 @@
 {
     "sourceMaps": true,
+    "ignore": [
+        "*.test.js",
+        "*.sandbox.js"
+    ],
     // "sourceRoot": "./src",
     "comments": false,
     "presets": ["stage-1"],

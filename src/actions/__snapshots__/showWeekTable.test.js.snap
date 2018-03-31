@@ -1,0 +1,31 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`actions showWeekTable default 1`] = `
+"
+┌─────┬──────┬─────────┬──────┐
+│ Day │ Date │ Project │ Time │
+└─────┴──────┴─────────┴──────┘
+"
+`;
+
+exports[`actions showWeekTable multiple times in a day 1`] = `
+"
+┌────────┬────────────┬───────────┬──────┐
+│ Day    │ Date       │ Project   │ Time │
+├────────┼────────────┼───────────┼──────┤
+│ Monday │ 2018-01-01 │ project   │ 5    │
+├────────┼────────────┼───────────┼──────┤
+│        │            │ project 2 │ 2    │
+└────────┴────────────┴───────────┴──────┘
+"
+`;
+
+exports[`actions showWeekTable single project 1`] = `
+"
+┌────────┬────────────┬─────────┬──────┐
+│ Day    │ Date       │ Project │ Time │
+├────────┼────────────┼─────────┼──────┤
+│ Monday │ 2018-01-01 │ project │ 7    │
+└────────┴────────────┴─────────┴──────┘
+"
+`;

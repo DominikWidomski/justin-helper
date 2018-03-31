@@ -7,7 +7,8 @@
     "clear": "taskr clear",
     "flow": "flow",
     "build": "./node_modules/.bin/babel src -d build -s",
-    "dev": "./node_modules/.bin/onchange src/* -- npm run build"
+    "dev": "npm run build && ./node_modules/.bin/onchange src/* -- npm run build",
+    "test": "./node_modules/.bin/jest"
   },
   "engines": {
     "node": ">=8"
@@ -30,6 +31,7 @@
     "@taskr/clear": "^1.1.0",
     "@taskr/watch": "^1.1.0",
     "babel-cli": "^6.26.0",
+    "babel-jest": "^22.4.3",
     "babel-plugin-add-module-exports": "^0.2.1",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.26.0",
     "babel-plugin-transform-flow-strip-types": "^6.22.0",
@@ -38,6 +40,7 @@
     "babel-preset-es2017": "^6.24.1",
     "babel-preset-stage-1": "^6.24.1",
     "flow-bin": "^0.65.0",
+    "jest": "^22.4.3",
     "onchange": "^3.3.0",
     "taskr": "^1.1.0"
   }
