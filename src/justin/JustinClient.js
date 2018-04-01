@@ -227,7 +227,7 @@ module.exports = class JustinClient {
 	}
 
 	async getUser(userId: string) {
-		return await this.get('/users/' + userId);
+		return this.get('/users/' + userId);
 	}
 
 	async getProjects(): Promise<JustinResponse<Project[]>> {
