@@ -36,11 +36,7 @@ const justin = new JustinClient({
 const fullDayHours = 7;
 const fullDayMinutes = 60 * fullDayHours;
 
-async function mainOld() {
-	const state = {};
-	
-	// Action: Authenticate
-	// newState: {auth: userData}
+async function main() {
 	await justin.authenticate(process.env.email || '', process.env.password || '');
 	const userData = await justin.getUser(justin.tokenData['user_id']);
 
@@ -54,32 +50,17 @@ async function mainOld() {
 	// 	Promise (This type is incompatible with the expected param type of union: `Promise` | `T`
 	// 	Member 1: Promise Error: property `attributes` Property cannot be accessed on possibly undefined value
 	// 	Member 2: T Error: property `data` Property not found in Promise)
-	// const projects: JustinResponse<Project[]> = await justin.getProjects();
-	// Action: init
-	// dispatch(setWeek);
-	// dispatch(getProjects);
-	// dispatch(getProjectTimes);
-	
-	const projects = (await (async function getProjects(state) {
-		return {
-			...state,
-			projects: await justin.getProjects()
-		};
-	})(state)).projects;
+	const projects: JustinResponse<Project[]> = await justin.getProjects();
 
 	// GET project-times to check 
 	// https://api.dev.justinapp.io/v1/project-times?filter%5Buser_id%5D=29e5bf60-f1c9-402b-a366-52afacc6765a&filter%5Bdate%3Astart%5D=2017-12-25&filter%5Bdate%3Aend%5D=2017-12-30&include=rejections
 
-	// Action: setWeek
-	// newState: {weekBeginning, weekEnding}
 	let weekBeginning = DateUtil.getDateTime(DateUtil.getStartOfWeek(new Date()));
 	let weekEnding = DateUtil.getDateTime(DateUtil.addDaysToDate(weekBeginning, 6));
 	let lookEarlier = true;
 	// @TODO: Store all retrieved projectTimes in a cache, handle only a week at a time
 	let projectTimes = [];
 
-	// Action; getProjectTimes
-	// newState: {projectTimes: resolveOrderedProjectTimes(...)}
 	const getProjectTimes = (userId: string, weekBeginning: string, weekEnding: string) => {
 		return justin.getProjectTimes({
 			user_id: userData.data.id,
@@ -101,16 +82,6 @@ async function mainOld() {
 		return data;
 	}
 
-	// Action: queryTimeScope
-	// Description: sets the current working time scope
-	// 				is blocking (while)
-	// newState: {timeScope: {start, end}, projectTimes}
-	// ... caveat: projectTimes should be updated in the other action
-	// 			   how to dispatch that and come back here once it's done?
-	//			   could `await dispatch(getProjectTimes)` and come back here
-	// 			   but that's outside of the queue right?
-	//			   If `dispatch()` is `async/await` inside it, how does that affect the control and
-	// 			   flow of the application itself, do I need to somehow track that there are async things up in the air?
 	while (lookEarlier) {
 		console.log("Week:", weekBeginning, weekEnding);
 
@@ -127,7 +98,6 @@ async function mainOld() {
 
 		({ lookEarlier } = result);
 		if (lookEarlier) {
-			// (Action: setScope to previous week?) OR (update the store and queue up queryTimeScope again?)
 			weekBeginning = DateUtil.getDateTime(DateUtil.addDaysToDate(weekBeginning, -7));
 			weekEnding = DateUtil.getDateTime(DateUtil.addDaysToDate(weekBeginning, 6));
 		}
@@ -136,14 +106,12 @@ async function mainOld() {
 	/**
 	 * Retrieves the last chronologically projectTime with non-zero time entry
 	 */
-	// Utility function
 	const getLastProjectTime = (projectTimes: Array<ProjectTime>): ProjectTime => {
 		return projectTimes
 			.sort((a, b) => new Date(b.attributes.date) - new Date(a.attributes.date))
 			.filter(projectTime => projectTime.attributes.duration_mins > 0)[0];
 	}
 
-	// Utility function
 	const totalTimeForDate = (projectTimes, date) => {
 		return projectTimes.filter((time, index, array) => {
 			return time.attributes.date === DateUtil.getDateTime(date)
@@ -158,10 +126,6 @@ async function mainOld() {
 	 *
 	 * @return {object}
 	 */
-	// Action: queryNextAction
-	// Description: Queries user input for what they want to do next
-	//				dispatches appropriate actions
-	// newState: {}
 	const queryNextAction = async (lastInput, projectTimes) => {
 		const isFullDay = totalTimeForDate(projectTimes, lastInput.attributes.date) >= fullDayMinutes;
 		const { date, duration_mins, project_id } = lastInput.attributes;
@@ -191,15 +155,11 @@ async function mainOld() {
 
 	//========================================
 
-	// Bit of state
 	let nextAction = {
 		type: "checkNext",
 		showWeek: true
 	};
 
-	// Create an exit function I guess???
-	// that can literally just do nothing or something, and that will let the process exit automatically
-	// At least for now
 	while (nextAction.type !== "exit") {
 		if (nextAction.showWeek) {
 			showWeekTable(projectTimes, projects, {
@@ -211,8 +171,6 @@ async function mainOld() {
 		// get last input - project date and time
 		const lastInput = getLastProjectTime(projectTimes);
 
-		// Action: goToNextValidDay
-		// newState: {lastDate, nextDate, actedDate}
 		const lastDate = lastInput.attributes.date;
 		let nextDate = DateUtil.addDaysToDate(lastDate, 1);
 		let actedDate = nextDate;
@@ -221,8 +179,6 @@ async function mainOld() {
 			nextDate = DateUtil.addDaysToDate(nextDate, 1);
 		}
 
-		// part of queryNextAction? responding to it?
-		// actionHandlers? (just imported functions)
 		const action = await queryNextAction(lastInput, projectTimes);
 		// POST for new Project time
 		// @TODO: Unify with the { type: string } type
@@ -258,7 +214,7 @@ async function mainOld() {
 		} else if (action === 'delete') {
 			// https://github.com/Microsoft/vscode/issues/5214
 			// https://github.com/facebook/flow/issues/1853
-			// ->>> LEFT HERE... no longer a problem it seems
+			// ->>> LEFT HERE
 			const lastTime = projectTimes.sort((a, b) => new Date(a.attributes.date) - new Date(b.attributes.date))[projectTimes.length - 1];
 
 			// TODO: this is duplicated several times also in other files, could be a util or something
@@ -267,7 +223,6 @@ async function mainOld() {
 			const approved = lastTime.attributes.approved_at ? true : false;
 			const message = `Deleting ${lastTime.attributes.duration_mins / 60}h on ${lastTime.attributes.date} for ${projectName} ${approved ? "[APPROVED]" : ""}`;
 			
-			// Maybe folder for prompts?
 			const result = await inquirer.prompt([{
 				type: "confirm",
 				name: "continue",
@@ -281,7 +236,6 @@ async function mainOld() {
 				projectTimes = projectTimes.filter(a => a.id !== lastTime.id);
 			}
 
-			// maybe this can be a nicer abstraction
 			actedDate = DateUtil.getDateObject(lastTime.attributes.date);
 		}
 
@@ -316,14 +270,6 @@ async function mainOld() {
 
 		nextAction = {
 			type: "checkNext",
-			// if this showWeek is in store, it would be more of a state machine rather than parameter
-			// could implement it as argument to a method I guess, that each Action would have to call manually
-			// rather than that being managed implicitly by the engine,
-			// which actually makes more sense in terms of responsibility
-			// Generator's power comes from being able to control explicitly how the control passing (or async, kinda), is handled.
-			// think Redux effects, not only do they do different things from the point of view of the dispatching function/scope
-			// but they can dictate how the rest of the app/lifecycle/machinery/engine should work, should it wait for things to resolve, kind of synchronously,
-			// or it can do other things in the mean time.
 			showWeek: true
 		};
 	}
@@ -362,77 +308,4 @@ async function mainOld() {
 	//*/
 }
 
-// Future
-// actions that receive store, do something, and modify store, can create additional actions
-
-let store = {
-	context: {},
-};
-const queue = [];
-
-function nextFunction(store) {
-	console.log('next function');
-}
-
-function runFunction(store, dispatch) {
-	console.log('want to update the store?');
-
-	dispatch(nextFunction);
-	
-	return {
-		...store,
-		newProp: 'yes'
-	};
-};
-
-// queueAction, to be executed after I'm done with this function...
-// is this pointless too? because it's like I'm queuing an action to be dispatched in the future, kinda arbitrarily,
-// kinda simulating the setTimeout(() => {}, 0) scenario, but not using the JS engine but an proprietary engine...
-// maybe this is pointless and actually hard to follow and undeterministic, not pure etc.
-// but maybe there are legit cases for this, because it's not just about something running after the scope is finished
-// but after updates are executed etc... to make sure it's synced...
-// well that's what Saga uses generators for. If I yield a `select` effect Saga can ensure to wait for a store sync, I think?!
-// perhaps it's all redundant, we just need to `yield` next action, maybe even store update itself is also an action.
-// so the engine is agnostic, it doesn't know about a store or whatever, nothing, it just runs actions and handles the async...
-// which maybe then is just superfluous anyway, because that's what await/async should help solve.
-// but maybe there are benefits to using generators for parallelism (think Promise.all) etc.? maybe not specifically to do with generators
-// but benefit of using an engine to run this that can handle this... dunno.
-function queueAction(action) {
-	queue.push(action);
-}
-
-// dispatches an action immediately, that may do something asynchonous, we don't care...
-// wait... if I don't care... I don't `yield`, if i DO care, i can `yield` and that way I can wait for it.
-// basically how await/async/promises works... hmm... is this all pointless?
-function dispatchAction(action) {
-	
-}
-
-/**
- * Immediately call an action, allowing you to await it
- */
-function callAction(action: () => Promise<any>) {
-	new Promise(resolve => {
-		// how to make sure it's Promisable even if it's not? i.e. in this context, always treat it as a Promise?
-		action().then(resolve);
-	});
-}
-
-queue.push(runFunction);
-
-function main() {
-	let nextAction;
-
-	while(nextAction = queue.shift()) {
-		// execute one action
-		const newStore = nextAction(store, callAction);
-		
-		// store is always updated, so direct manipulation in the function is not feasible
-		store = {
-			...store,
-			...(newStore || {})
-		}
-	}
-}
-
-mainOld();
+main();
