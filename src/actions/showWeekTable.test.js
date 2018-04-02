@@ -1,5 +1,5 @@
-const showWeekTable = require("./showWeekTable");
 const bufferConsoleLog = require("./utils/consoleBuffer");
+const showWeekTable = require("./showWeekTable");
 
 describe("actions", () => {    
     describe("showWeekTable", () => {
