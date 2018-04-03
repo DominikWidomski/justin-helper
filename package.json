@@ -41,6 +41,7 @@
     "babel-preset-stage-1": "^6.24.1",
     "flow-bin": "^0.65.0",
     "jest": "^22.4.3",
+    "mock-stdin": "^0.3.1",
     "onchange": "^3.3.0",
     "taskr": "^1.1.0"
   }

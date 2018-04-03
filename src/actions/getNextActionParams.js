@@ -18,6 +18,7 @@ type Options = {
 
 const getNextActionParams = async (lastInput: ProjectTime, projects: JustinResponse<Project[]>, options: Options = {}) => {
 	function makeChoices() {
+		// console.log('made chioces');
 		const choices = [];
 
 		for	(let i = 1; i <= 7; ++i) {
@@ -30,13 +31,14 @@ const getNextActionParams = async (lastInput: ProjectTime, projects: JustinRespo
 		return choices;
 	}
 	
-	return await inquirer.prompt([
+	return inquirer.prompt([
 		{
 			message: "Select a project",
 			type: "autocomplete",
 			name: "project_id",
 			default: lastInput.attributes.project_id,
 			source: (answers, input = "") => {
+				console.log('project sources', input);
 				const filteredProjects = fuzzy.filter(input, projects.data, {
 					extract: project => project.attributes.name
 				});
@@ -51,14 +53,14 @@ const getNextActionParams = async (lastInput: ProjectTime, projects: JustinRespo
 					}));
 				});
 			}
-		},
-		{
-			message: "Duration",
-			type: "list",
-			name: "duration_mins",
-			default: lastInput.attributes.duration_mins + "",
-			choices: makeChoices()
 		}
+		// {
+		// 	message: "Duration",
+		// 	type: "list",
+		// 	name: "duration_mins",
+		// 	default: lastInput.attributes.duration_mins + "",
+		// 	choices: makeChoices()
+		// }
 	]);
 };
 

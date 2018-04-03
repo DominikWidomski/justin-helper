@@ -4,10 +4,12 @@
 // this is so that tests can run independently of each other I guess, in parallel, although not sure Jest does that anyway.
 // perhaps the global thing can lookup the thing calling it?... seems flaky with JS.
 // one sure thing would be to inject the console dep I guess... 🤔
+// TODO: If anything this needs to be async and `await fn()`
 const bufferConsoleLog = (fn, ...args) => {
     const consoleLog = global.console.log;
     const config = {
-        stripColors: true
+        stripColors: true,
+        passThrough: false
     };
     let buffer = '';
 
@@ -20,6 +22,10 @@ const bufferConsoleLog = (fn, ...args) => {
         }
     
         buffer += '\n' + args;
+
+        if (config.passThrough) {
+            consoleLog(args);
+        }
     };
     
     fn(...args);
