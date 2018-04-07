@@ -1,6 +1,7 @@
 const bufferConsoleLog = require("./utils/consoleBuffer");
 const mockStdin = require('mock-stdin');
 const inquirer = require('inquirer');
+inquirer.registerPrompt('autocomplete', require('inquirer-autocomplete-prompt'));
 const getNextActionParams = require("./getNextActionParams");
 
 if (!('describe' in global)) {
@@ -60,12 +61,19 @@ const projectTime = {
 };
 
 const projects = {
-    data: [{
-        id: '1',
-        attributes: {
-            name: 'project',
+    data: [
+        {
+            id: '1',
+            attributes: {
+                name: 'project',
+            }
+        }, {
+            id: '2',
+            attributes: {
+                name: 'private project',
+            }
         }
-    }]
+    ]
 };
 
 describe("actions", () => {    
@@ -97,19 +105,8 @@ describe("actions", () => {
          * (whichever way) to have it run automatically, the user might not see output on screen from specific actions etc.
          */
         test("default", async () => {
-            // jest.mock("inquirer", () => {
-            //     console.log('mocking')
-                
-            //     return {
-            //         prompt: async (...options) => {
-            //             console.log('inside mock');
-            
-            //             // response
-            //             return input => {
-            //                 return options;
-            //             };
-            //         }
-            //     }
+            // jest.mock("inquirer", () => ({
+            //     prompt: async (...options) => input => options
             // });
             const stdin = mockStdin.stdin();
             const wait = time => {
@@ -139,10 +136,10 @@ describe("actions", () => {
 
             // mockInput();
 
-            const _prompt = inquirer.prompt;
+            // const _prompt = inquirer.prompt;
             // problem with the 1st inquirer.prompt question in this case is that it has a dynamic output, callback
             // so still have to call real prompt to trigger that functionality
-            inquirer.prompt = function (questions) {
+            // inquirer.prompt = function (questions) {
                 // if (false && questions.length === 1 && questions[0].name === 'all') {
                 //     console.log('GONNA RESOLVE WITH ANSWER "one"');
 
@@ -158,20 +155,20 @@ describe("actions", () => {
                 // }
 
                 // this is now just a pointless empty proxy
-                return new Promise(resolve => { 
-                    setTimeout(async function() {
-                        mockInput();
+                // return new Promise(resolve => { 
+                    // setTimeout(async function() {
+                        // mockInput();
                         // process.nextTick(function mockResponse() {
                             // stdin.send('\u001b[B'); // down arrow
                             // stdin.send('\n');
                             // waitTicks(3, 2000);
                         // });
                         
-                        const ans = await _prompt(questions);
-                        resolve(ans);
-                    }, 0);
-                });
-            };
+                        // const ans = await _prompt(questions);
+                        // resolve(ans);
+                    // }, 0);
+                // });
+            // };
             
             const questionCheckbox = {
                 type: 'checkbox',
@@ -185,9 +182,9 @@ describe("actions", () => {
                 message: 'pick third option',
                 choices: ['one', 'two', 'three']
             };
-            const ans = await inquirer.prompt([questionList]);
+            // const ans = await inquirer.prompt([questionList]);
 
-            console.log('ANSWER:', ans);
+            // console.log('ANSWER:', ans);
             
             let prompts = [];
             let output
@@ -207,8 +204,24 @@ describe("actions", () => {
                 //     stdin.send('p');
                 //     stdin.send('\n');
                 // });
-                // const answer = await getNextActionParams(projectTime, projects)
-                // console.log('prompt out:', answer);
+                process.nextTick(async function mockResponse() {
+                    stdin.send(keys.up);
+                    stdin.send(keys.up);
+                    stdin.send(keys.enter);
+
+                    process.nextTick(async function mockResponse() {
+                        // TODO: inquirer autocomplete has source: async callback, gotta wait for it to update
+                        // but there is probably a more correct way of doing that.
+                        // i.e. wait for a promise to resolve somewhere to have the certainty
+                        // TODO: Also, silence inquirer output
+                        await wait(100); // TODO: It's like I need to wait here for inquirer to update
+                        stdin.send('private');
+                        await wait(100); // TODO: It's like I need to wait here for inquirer to update
+                        stdin.send(keys.enter);
+                    });
+                });
+                const answer = await getNextActionParams(projectTime, projects)
+                console.log('ANSWERS:', answer);
             // });
 
             // expect(consoleLogBuffer).toMatchSnapshot();
