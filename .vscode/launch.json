@@ -36,7 +36,10 @@
                 "request": "launch",
                 "console": "integratedTerminal",
                 "name": "Launch TEST",
-                "program": "${workspaceRoot}/build/test",
+                "program": "${workspaceRoot}/node_modules/.bin/jest",
+                "args": [
+                    "--testNamePattern='getNextActionParams'"
+                ],
                 "sourceMaps": true,
                 "outFiles": [
                     "${workspaceRoot}/build/*"
