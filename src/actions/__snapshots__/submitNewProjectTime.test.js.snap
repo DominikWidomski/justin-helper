@@ -1,0 +1,52 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`actions submitNewProjectTime default 1`] = `
+Array [
+  Array [
+    "/project-times",
+    Object {
+      "data": Object {
+        "attributes": Object {
+          "date": "2018-01-02",
+          "duration_mins": 420,
+          "project_id": "1",
+          "user_id": 1,
+        },
+        "type": "project-times",
+      },
+    },
+  ],
+]
+`;
+
+exports[`actions submitNewProjectTime default 2`] = `
+Array [
+  "",
+  "? About to submit 7h to \\"project\\" on Tuesday 2018-01-02 (y/N) ",
+  "",
+  "",
+  "",
+  "? About to submit 7h to \\"project\\" on Tuesday 2018-01-02 (y/N) Y",
+  "",
+  "",
+  "",
+  "? About to submit 7h to \\"project\\" on Tuesday 2018-01-02 Yes",
+  "",
+  "",
+  "
+",
+  "Submitted 7 to project on Tuesday 2018-01-02",
+]
+`;
+
+exports[`actions submitNewProjectTime default 3`] = `
+Object {
+  "attributes": Object {
+    "date": "2018-01-02",
+    "duration_mins": 420,
+    "name": "Project name",
+    "project_id": "1",
+    "user_id": 1,
+  },
+}
+`;

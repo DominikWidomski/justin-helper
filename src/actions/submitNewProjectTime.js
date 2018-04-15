@@ -13,7 +13,7 @@ function showSuccessfulSubmissionResponse(res, projects) {
 	
 	const projectName = projects.data.find(project => project.id === project_id).attributes.name;
 	
-	console.log(`Submitted ${duration_mins / 60} to ${projectName} on ${DateUtil.getNameOfDay(date)} ${date}`);
+	process.stdout.write(`Submitted ${duration_mins / 60} to ${projectName} on ${DateUtil.getNameOfDay(date)} ${date}`);
 }
 
 /**
