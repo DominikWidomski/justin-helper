@@ -1,3 +1,172 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`actions getNextActionParams default 1`] = `Array []`;
+exports[`actions getNextActionParams default 1`] = `
+Array [
+  "",
+  "? Duration (Use arrow keys)
+  1h 
+  2h 
+  3h 
+  4h 
+  5h 
+  6h 
+❯ 7h ",
+  "",
+  "",
+  "",
+  "? Duration 
+  1h 
+  2h 
+  3h 
+  4h 
+  5h 
+❯ 6h 
+  7h ",
+  "",
+  "",
+  "",
+  "? Duration 
+  1h 
+  2h 
+  3h 
+  4h 
+❯ 5h 
+  6h 
+  7h ",
+  "",
+  "",
+  "",
+  "? Duration 5h",
+  "",
+  "",
+  "
+",
+  "",
+  "? Select a project (Use arrow keys or type to search)
+❯ project  
+  private project  ",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "? Select a project p
+❯ project  
+  private project  ",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "? Select a project p
+  Searching...",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "? Select a project pr
+  Searching...",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "? Select a project pr
+  Searching...",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "? Select a project pri
+  Searching...",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "? Select a project pri
+  Searching...",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "? Select a project priv
+  Searching...",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "? Select a project priv
+  Searching...",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "? Select a project priva
+  Searching...",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "? Select a project priva
+  Searching...",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "? Select a project privat
+  Searching...",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "? Select a project privat
+  Searching...",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "? Select a project private
+  Searching...",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "? Select a project private
+  Searching...",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "? Select a project private
+❯ private project  ",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "? Select a project private project ",
+  "",
+  "",
+  "
+",
+]
+`;
+
+exports[`actions getNextActionParams default 2`] = `
+Object {
+  "duration_mins": "300",
+  "project_id": "2",
+}
+`;
