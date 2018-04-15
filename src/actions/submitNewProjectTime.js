@@ -60,8 +60,9 @@ export default async function submitNewProjectTime(
 
 			if (!res.errors) {
 				showSuccessfulSubmissionResponse(res, projects);
-				return res.data;
+				return res.data; // WHAT's this returning?
 			}
+			// throw error otherwise?
 		} catch(e) {
 			console.log(e);
 		}

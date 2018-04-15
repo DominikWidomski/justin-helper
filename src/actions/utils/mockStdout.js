@@ -24,7 +24,7 @@ module.exports = function mockStdoutWrite() {
             process.stdout.write = originalStdoutWrite;
         },
         // bypasses the capturing, useful for debugging
-        debug: (...args) => originalStdoutWrite(...args),
+        debug: (...args) => originalStdoutWrite(...args), // this was working, but I think in conjunction with the console.log stuff it wasn't
         flushAll: () => buffer,
         flush: () => {
             const flushIndex = lastFlushIndex || 0;
