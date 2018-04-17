@@ -15,10 +15,10 @@ module.exports = class MockFetch {
 	// how to match against a specific request body
 	// at the same time as allowing to provide response body and params separately?
 	respondTo(method, url, response) {
-		this._responses[method][url] = new Response(JSON.stringify(response));
+		this._responses[method][url] = response;
 	}
 
-	fetch(url, options) {
+	async fetch(url, options) {
 		console.log(chalk.yellow("MOCK:", options.method, url));
 
 		const {
@@ -29,7 +29,14 @@ module.exports = class MockFetch {
 
 		url = protocol + "//" + hostname + pathname;
 
-		return this._responses[options.method][url].clone();
+		let response = this._responses[options.method][url];
+		
+		// dynamic response
+		if (typeof response === "function") {
+			response = await response(url, options);
+		}
+		
+		return new Response(JSON.stringify(response));
 	}
 
 };

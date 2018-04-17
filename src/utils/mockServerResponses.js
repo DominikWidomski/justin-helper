@@ -29,44 +29,48 @@ module.exports = () => {
         ]
     });
 
-    mock.respondTo("GET", "https://api.dev.justinapp.io/v1/project-times", {
-        data: [
-            {
-                id: 1,
-                attributes: {
-                    project_id: 1,
-                    date: '2018-01-01',
-                    duration_mins: '420'
+    mock.respondTo("GET", "https://api.dev.justinapp.io/v1/project-times", () => {
+        // logic to fake last week dates... -_-
+        
+        return {
+            data: [
+                {
+                    id: 1,
+                    attributes: {
+                        project_id: 1,
+                        date: '2018-04-16',
+                        duration_mins: '420'
+                    }
+                },
+                {
+                    id: 2,
+                    attributes: {
+                        project_id: 1,
+                        date: '2018-04-17',
+                        duration_mins: '120'
+                    }
+                },
+                {
+                    id: 3,
+                    attributes: {
+                        project_id: 2,
+                        date: '2018-04-17',
+                        duration_mins: '300'
+                    }
+                },
+                {
+                    id: 4,
+                    attributes: {
+                        project_id: 1,
+                        date: '2018-04-18',
+                        duration_mins: '420'
+                    }
                 }
-            },
-            {
-                id: 2,
-                attributes: {
-                    project_id: 1,
-                    date: '2018-01-02',
-                    duration_mins: '120'
-                }
-            },
-            {
-                id: 3,
-                attributes: {
-                    project_id: 2,
-                    date: '2018-01-02',
-                    duration_mins: '300'
-                }
-            },
-            {
-                id: 4,
-                attributes: {
-                    project_id: 1,
-                    date: '2018-01-03',
-                    duration_mins: '420'
-                }
+            ],
+            meta: {
+                total: 4
             }
-        ],
-        meta: {
-            total: 1
-        }
+        };
     });
 
     mock.respondTo("POST", "https://api.dev.justinapp.io/v1/project-times", {
