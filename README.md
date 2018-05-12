@@ -18,7 +18,12 @@ CLI tool for justin, ultimately to be automated and plug into slack.
 
 - [x] split out justin client code
 
+- [ ] Code standards
+
 - [ ] Bug: table not displaying when deleting ProjectTime
+	> Cannot read property 'attributes of undefined
+	> const lastInput = getLastProjectTime(projectTimes);
+	> const lastDate = lastInput.attributes.date;
 - [ ] Bug: 'repeat' action into the future triggers a message telling you there's no more to submit, but not if 'edit' first
 
 - [ ] Flow typing
