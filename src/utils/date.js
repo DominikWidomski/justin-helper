@@ -91,4 +91,16 @@ module.exports = {
             isWeekend: ((date.getDay() + 6) % 7) >= 5,
         };
     },
+
+    getNextWorkDay(date: Date): Date {
+        // some infinite loop protection
+        let i = 0;
+
+        do {
+            date = this.addDaysToDate(date, 1);
+            ++i;
+        } while (this.getDateObject(date).isWeekend && i < 7);
+
+        return date;
+    }
 };
