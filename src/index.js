@@ -91,7 +91,7 @@ async function main() {
 			name: "lookEarlier",
 			// if found times, stay in this week, otherwise move further back
 			default: thisWeek.meta.total ? false : true,
-			message: `Found ${thisWeek.meta.total} dates for this week. Look earlier?`
+			message: `Found ${thisWeek.meta.total} entries for this week. Look earlier?`
 		}]);
 
 		projectTimes = resolveOrderedProjectTimes(projectTimes, thisWeek.data);
