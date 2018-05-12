@@ -92,7 +92,7 @@ async function main() {
 			// if found times, stay in this week, otherwise move further back
 			default: thisWeek.meta.total ? false : true,
 			message: `Found ${thisWeek.meta.total} dates for this week. Look earlier?`
-		}]);	
+		}]);
 
 		projectTimes = resolveOrderedProjectTimes(projectTimes, thisWeek.data);
 
@@ -160,6 +160,8 @@ async function main() {
 		showWeek: true
 	};
 
+	let actedDate;
+
 	while (nextAction.type !== "exit") {
 		if (nextAction.showWeek) {
 			showWeekTable(projectTimes, projects, {
@@ -170,16 +172,11 @@ async function main() {
 
 		// get last input - project date and time
 		const lastInput = getLastProjectTime(projectTimes);
-
-		const lastDate = lastInput.attributes.date;
-		let nextDate = DateUtil.addDaysToDate(lastDate, 1);
-		let actedDate = nextDate;
-
-		while (DateUtil.getDateObject(nextDate).isWeekend) {
-			nextDate = DateUtil.addDaysToDate(nextDate, 1);
-		}
+		const lastDate = new Date(lastInput.attributes.date);
+		let nextDate = DateUtil.getNextWorkDay(actedDate || lastDate);
 
 		const action = await queryNextAction(lastInput, projectTimes);
+		
 		// POST for new Project time
 		// @TODO: Unify with the { type: string } type
 		if (action === 'repeat') {
@@ -190,6 +187,8 @@ async function main() {
 				// could probably do that before I even ask if you wanna do anything
 				console.log(chalk.cyan("No more recent dates before today found to enter 👌"));
 			}
+
+			actedDate = nextDate;
 		} else if (action === 'edit') {
 			const nextActionParams = await getNextActionParams(lastInput, projects);
 
@@ -200,6 +199,8 @@ async function main() {
 			if (newProjectTime) {
 				projectTimes = resolveOrderedProjectTimes(projectTimes, [newProjectTime]);
 			}
+
+			actedDate = nextDate;
 		} else if (action === 'continue') {
 			const totalTime = totalTimeForDate(projectTimes, lastInput.attributes.date);
 			const nextActionParams = await getNextActionParams(lastInput, projects, {
@@ -214,7 +215,6 @@ async function main() {
 		} else if (action === 'delete') {
 			// https://github.com/Microsoft/vscode/issues/5214
 			// https://github.com/facebook/flow/issues/1853
-			// ->>> LEFT HERE
 			const lastTime = projectTimes.sort((a, b) => new Date(a.attributes.date) - new Date(b.attributes.date))[projectTimes.length - 1];
 
 			// TODO: this is duplicated several times also in other files, could be a util or something
@@ -254,16 +254,16 @@ async function main() {
 		// }
 
 		// Refreshing projectTimes for current week
-		// @TODO: get next week if we've moved on further
-		nextDate = DateUtil.addDaysToDate(actedDate, 1);
-		const isCurrentWeek = nextDate >= new Date(weekBeginning) && nextDate <= new Date(weekEnding);
+		const isCurrentWeek = actedDate >= new Date(weekBeginning) && actedDate <= new Date(weekEnding);
+
 		if (!isCurrentWeek) {
-			weekBeginning = DateUtil.getStartOfWeek(nextDate);
-			weekEnding = DateUtil.addDaysToDate(weekBeginning, 6);
+			weekBeginning = DateUtil.getDateTime(DateUtil.getStartOfWeek(actedDate));
+			weekEnding = DateUtil.getDateTime(DateUtil.addDaysToDate(weekBeginning, 6));
 		}
+		
 		try	{
-			const newProjectTimes = (await getProjectTimes(userData.data.id, weekBeginning, weekEnding)).data;
-			projectTimes = resolveOrderedProjectTimes(projectTimes, newProjectTimes);
+			const newProjectTimes = await getProjectTimes(userData.data.id, weekBeginning, weekEnding);
+			projectTimes = resolveOrderedProjectTimes(projectTimes, newProjectTimes.data);
 		} catch (e) {
 			console.log(e);
 		}
