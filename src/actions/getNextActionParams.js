@@ -21,6 +21,8 @@ const getNextActionParams = async (lastInput: ProjectTime, projects: JustinRespo
 	function makeChoices() {
 		const choices = [];
 
+		// TODO: .5h? how? new input kinda like type=number works and up down keys increment by .5h?
+		// which could also show some faded out options next to it...
 		for	(let i = 1; i <= 7; ++i) {
 			const mins = 60 * i;
 			if (!options.maxMinutes || mins <= options.maxMinutes) {

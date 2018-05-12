@@ -25,6 +25,9 @@ const showWeekTable = (
 	projects: JustinResponse<Project[]>,
 	options: showWeekTableOptionsType = {startDate: '', endDate: ''}
 ) => {
+
+	// TODO: Add a week heading before those headings, colspan: 4
+	// Vertically span columns for same day
 	const table = new Table({
 	    head: ['Day', 'Date', 'Project', 'Time']
 	});
